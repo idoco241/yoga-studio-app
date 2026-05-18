@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 320" aria-label="Decorative olive branch">
+  <g fill="none" stroke="#6B7563" stroke-width="1.1" stroke-linecap="round" opacity="0.55">
+    
+    <path d="M30 10 C 60 60, 80 110, 100 170 C 110 220, 110 270, 90 310"></path>
+    
+    <path d="M70 80 C 50 95, 40 105, 30 130"></path>
+    <path d="M88 130 C 110 145, 124 160, 132 180"></path>
+    <path d="M100 200 C 80 215, 66 232, 56 260"></path>
+    <path d="M112 240 C 130 252, 138 270, 138 290"></path>
+  </g>
+
+  
+  <g fill="#6B7563" opacity="0.45">
+    <ellipse cx="35" cy="35" rx="3" ry="9" transform="rotate(-25 35 35)"></ellipse>
+    <ellipse cx="58" cy="62" rx="3" ry="10" transform="rotate(-15 58 62)"></ellipse>
+    <ellipse cx="28" cy="120" rx="3.5" ry="11" transform="rotate(-70 28 120)"></ellipse>
+    <ellipse cx="46" cy="100" rx="3" ry="9" transform="rotate(-50 46 100)"></ellipse>
+    <ellipse cx="78" cy="100" rx="3" ry="11" transform="rotate(20 78 100)"></ellipse>
+    <ellipse cx="118" cy="148" rx="3" ry="10" transform="rotate(45 118 148)"></ellipse>
+    <ellipse cx="132" cy="172" rx="3" ry="11" transform="rotate(60 132 172)"></ellipse>
+    <ellipse cx="94" cy="186" rx="3" ry="10" transform="rotate(-10 94 186)"></ellipse>
+    <ellipse cx="74" cy="226" rx="3" ry="11" transform="rotate(-55 74 226)"></ellipse>
+    <ellipse cx="58" cy="252" rx="3" ry="10" transform="rotate(-70 58 252)"></ellipse>
+    <ellipse cx="124" cy="256" rx="3" ry="11" transform="rotate(55 124 256)"></ellipse>
+    <ellipse cx="138" cy="282" rx="3" ry="10" transform="rotate(70 138 282)"></ellipse>
+    <ellipse cx="96" cy="290" rx="3" ry="10" transform="rotate(0  96 290)"></ellipse>
+  </g>
+</svg>

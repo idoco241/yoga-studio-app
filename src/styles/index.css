@@ -1,0 +1,7 @@
+/* RS Yoga — web entry styles */
+html, body, #root { height: 100%; margin: 0; }
+body {
+  background: #F5F1ED;
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}

@@ -89,13 +89,50 @@ Tables to be created via migrations:
 
 ## Git Workflow
 
-Every feature section is developed on its own branch. Never commit directly to `master`.
+### Rules
+- **Never commit or push directly to `master`.**
+- Every section of work gets its own branch.
+- Commit incrementally as work progresses — don't batch everything into one commit.
+- Keep commit messages short (one subject line).
+- Only merge to `master` after explicit user approval.
+- Only push to `origin/master` after the user confirms the merge.
 
+### Branch lifecycle
+
+```bash
+# 1. Start work on a new section
+git checkout master
+git pull origin master                  # sync before branching
+git checkout -b feature/<section-name>
+
+# 2. Develop — commit as you go
+git add <files>
+git commit -m "feat: <short description>"
+
+# 3. User reviews → approves merge
+git checkout master
+git merge feature/<section-name>        # fast-forward when possible
+
+# 4. Push to origin only after user confirms
+git push origin master
+
+# 5. Clean up the feature branch (optional but recommended)
+git branch -d feature/<section-name>
+git push origin --delete feature/<section-name>
 ```
-git checkout -b feature/<section-name>   # start a new section
-# ... develop, commit incrementally ...
-# user approves → merge to master
-```
+
+### Branch naming
+| Prefix | Use |
+|---|---|
+| `feature/` | New functionality |
+| `fix/` | Bug fixes |
+| `docs/` | Documentation-only changes |
+| `chore/` | Dependency updates, config, tooling |
+
+### What not to do
+- Do not `git push --force` to `master` or `origin/master` under any circumstances.
+- Do not amend commits that have already been pushed to origin.
+- Do not skip hooks (`--no-verify`).
 
 ---
 
@@ -118,12 +155,11 @@ This is an **Expo 54** cross-platform app. **Mobile (iOS/Android) is the priorit
 
 ### Two separate entry points
 
-**Native (iOS/Android):** `app/_layout.tsx` → Stack navigator → `app/index.tsx`  
-File-based routing via expo-router; add screens as `app/<name>.tsx`.
+**Native (iOS/Android):** `app/_layout.tsx` → Stack (with `LocaleContext.Provider`) → `app/(tabs)/_layout.tsx` → 4-tab navigator → screens in `app/(tabs)/`.  
+Add new screens as `app/(tabs)/<name>.tsx`; add new top-level flows as `app/<name>.tsx`.
 
 **Web:** `index.html` → `src/main.tsx` → React DOM (`src/app/App.tsx`)  
-The web entry is a standalone React DOM app, separate from the Expo Router native flow.  
-Note: `src/app/App.tsx` and `src/styles/index.css` do not exist yet — to be created when web work begins.
+Standalone React DOM entry, separate from the Expo Router native flow. Currently renders a placeholder — build out when web becomes a priority.
 
 ### Key config
 
@@ -137,11 +173,12 @@ Note: `src/app/App.tsx` and `src/styles/index.css` do not exist yet — to be cr
 **Current:**
 - `expo-router` — file-based routing for native
 - `react-native-reanimated` + `react-native-gesture-handler` — animations and gestures
-- `@expo/vector-icons` + `expo-symbols` — icons
+- `@expo/vector-icons` — Ionicons used throughout the UI
+- `expo-image` — SVG logo and botanical rendering
+- `expo-font` + `@expo-google-fonts/*` — Cormorant Garamond, Inter, Heebo, Frank Ruhl Libre
 - `react-native-web` — renders RN components on web (web output mode: `static`)
 
 **Planned:**
 - `@supabase/supabase-js` — Supabase client
-- `expo-localization` + i18n library — bilingual Hebrew/English support
 - `expo-notifications` — push notifications for payment flow
 - Green Invoice API calls via native `fetch`

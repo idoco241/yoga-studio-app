@@ -74,15 +74,13 @@ const styles = StyleSheet.create({
     marginBottom: spacing[3],
   },
   initials: {
-    fontFamily: fonts.serif,
+    fontFamily: fonts.serifMd,
     fontSize: 28,
-    fontWeight: '500',
     color: '#fff',
   },
   userName: {
-    fontFamily: fonts.serif,
+    fontFamily: fonts.serifMd,
     fontSize: fontSize['2xl'],
-    fontWeight: '500',
     color: colors.fg,
     marginBottom: 4,
   },

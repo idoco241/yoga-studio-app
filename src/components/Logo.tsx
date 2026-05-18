@@ -40,9 +40,9 @@ const styles = StyleSheet.create({
     letterSpacing: 4,
   },
   sub: {
+    fontFamily: fonts.sansLt,
     fontSize: fontSize.xs,
     letterSpacing: 3,
     color: colors.fgMuted,
-    fontWeight: '300',
   },
 });

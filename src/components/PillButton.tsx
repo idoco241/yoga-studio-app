@@ -1,5 +1,5 @@
 import { TouchableOpacity, Text, StyleSheet, ViewStyle } from 'react-native';
-import { colors, radii, fontSize } from '../theme';
+import { colors, radii, fontSize, fonts } from '../theme';
 
 type Variant = 'primary' | 'outline' | 'ghost' | 'soft';
 type Size = 'sm' | 'md' | 'lg';
@@ -51,7 +51,7 @@ const styles = StyleSheet.create({
   mdText:  { fontSize: 14 },
   lgText:  { fontSize: 15 },
   // text colors
-  baseText:     { fontWeight: '500' },
+  baseText:     { fontFamily: fonts.sansMd },
   primaryText:  { color: colors.primaryFg },
   outlineText:  { color: colors.primary },
   ghostText:    { color: colors.primary },

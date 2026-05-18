@@ -139,9 +139,9 @@ const styles = StyleSheet.create({
     color: colors.fgMuted,
     lineHeight: 26,
   },
-  dateNumActive: { color: colors.fg, fontWeight: '500' },
-  dateLabel: { fontSize: 11, color: colors.fgMuted },
-  dateLabelActive: { color: colors.fg, fontWeight: '500' },
+  dateNumActive: { color: colors.fg, fontFamily: fonts.serifMd },
+  dateLabel: { fontFamily: fonts.sans, fontSize: 11, color: colors.fgMuted },
+  dateLabelActive: { color: colors.fg, fontFamily: fonts.sansMd },
   dateUnderline: {
     position: 'absolute',
     bottom: 0,
@@ -157,8 +157,8 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
   },
   tab: { position: 'relative', paddingVertical: 10, paddingHorizontal: 14, marginBottom: -1 },
-  tabText: { fontSize: fontSize.sm, color: colors.fgMuted },
-  tabTextActive: { color: colors.fg, fontWeight: '500' },
+  tabText: { fontFamily: fonts.sans, fontSize: fontSize.sm, color: colors.fgMuted },
+  tabTextActive: { color: colors.fg, fontFamily: fonts.sansMd },
   tabUnderline: {
     position: 'absolute',
     bottom: 0, left: 8, right: 8,
@@ -168,7 +168,7 @@ const styles = StyleSheet.create({
   },
   // list
   list: { padding: spacing[6], paddingTop: spacing[4] },
-  sectionLabel: { fontSize: 13, fontWeight: '500', color: colors.fg, marginBottom: spacing[3] },
+  sectionLabel: { fontFamily: fonts.sansMd, fontSize: 13, color: colors.fg, marginBottom: spacing[3] },
   classCard: {
     flexDirection: 'row',
     padding: spacing[3],
@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
   },
   thumb: { borderRadius: radii.sm, flexShrink: 0 },
   classDetails: { flex: 1, minWidth: 0 },
-  className: { fontSize: 15, fontWeight: '500', color: colors.fg, marginBottom: 4 },
+  className: { fontFamily: fonts.sansMd, fontSize: 15, color: colors.fg, marginBottom: 4 },
   classMeta: { fontSize: fontSize.sm, color: colors.fgMuted, lineHeight: 20 },
   classAction: { alignItems: 'center', gap: 6, flexShrink: 0 },
   signups: { flexDirection: 'row', alignItems: 'center', gap: 4 },

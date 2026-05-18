@@ -31,11 +31,24 @@ export const fontSize = {
   xs: 12, sm: 14, base: 16, lg: 18, xl: 20, '2xl': 24, '3xl': 30, display: 36,
 } as const;
 
-// System fonts — Cormorant Garamond and Inter ship via @expo-google-fonts (add later)
-// For now, Georgia → serif display, System → UI sans
 export const fonts = {
-  serif: 'Georgia',
-  sans:  undefined as string | undefined, // system default
+  // Display serif — Cormorant Garamond
+  serif:    'CormorantGaramond_400Regular',
+  serifMd:  'CormorantGaramond_500Medium',
+  serifSb:  'CormorantGaramond_600SemiBold',
+  // UI sans — Inter
+  sans:     'Inter_400Regular',
+  sansLt:   'Inter_300Light',
+  sansMd:   'Inter_500Medium',
+  sansSb:   'Inter_600SemiBold',
+  // Hebrew display serif — Frank Ruhl Libre
+  serifHe:  'FrankRuhlLibre_400Regular',
+  serifHeMd:'FrankRuhlLibre_500Medium',
+  // Hebrew UI sans — Heebo
+  sansHe:   'Heebo_400Regular',
+  sansHeLt: 'Heebo_300Light',
+  sansHeMd: 'Heebo_500Medium',
+  sansHeSb: 'Heebo_600SemiBold',
 } as const;
 
 export const shadow = StyleSheet.create({

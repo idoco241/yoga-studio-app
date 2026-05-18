@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   cardBody: { flex: 1 },
-  cardTitle: { fontSize: 15, fontWeight: '500', color: colors.fg, marginBottom: spacing[2] },
+  cardTitle: { fontFamily: fonts.sansMd, fontSize: 15, color: colors.fg, marginBottom: spacing[2] },
   classRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -125,5 +125,5 @@ const styles = StyleSheet.create({
   },
   classMeta: { fontSize: fontSize.xs, color: colors.fgMuted },
   className: { fontSize: fontSize.sm, color: colors.fg, marginTop: 2 },
-  viewAll: { fontSize: fontSize.sm, color: colors.primary, fontWeight: '500', marginTop: spacing[3] },
+  viewAll: { fontFamily: fonts.sansMd, fontSize: fontSize.sm, color: colors.primary, marginTop: spacing[3] },
 });

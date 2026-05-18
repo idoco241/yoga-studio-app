@@ -94,11 +94,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: spacing[4],
   },
-  emptyTitle: { fontSize: 17, fontWeight: '500', color: colors.fg, marginBottom: spacing[2], textAlign: 'center' },
+  emptyTitle: { fontFamily: fonts.sansMd, fontSize: 17, color: colors.fg, marginBottom: spacing[2], textAlign: 'center' },
   emptySub: { fontSize: fontSize.sm, color: colors.fgMuted, textAlign: 'center', marginBottom: spacing[5] },
   // booking card
   bookingCard: { padding: spacing[4], marginBottom: spacing[3] },
-  bookingName: { fontSize: 16, fontWeight: '500', color: colors.fg, marginBottom: 4 },
+  bookingName: { fontFamily: fonts.sansMd, fontSize: 16, color: colors.fg, marginBottom: 4 },
   bookingMeta: { fontSize: fontSize.sm, color: colors.fgMuted, lineHeight: 22 },
   actions: { flexDirection: 'row', gap: spacing[2], marginTop: spacing[3] },
   signupRow: {

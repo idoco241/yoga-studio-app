@@ -90,19 +90,19 @@ Tables to be created via migrations:
 ## Git Workflow
 
 ### Rules
-- **Never commit or push directly to `master`.**
+- **Never commit or push directly to `main`.**
 - Every section of work gets its own branch.
 - Commit incrementally as work progresses — don't batch everything into one commit.
 - Keep commit messages short (one subject line).
-- Only merge to `master` after explicit user approval.
-- Only push to `origin/master` after the user confirms the merge.
+- Only merge to `main` after explicit user approval.
+- Only push to `origin/main` after the user confirms the merge.
 
 ### Branch lifecycle
 
 ```bash
 # 1. Start work on a new section
-git checkout master
-git pull origin master                  # sync before branching
+git checkout main
+git pull origin main                    # sync before branching
 git checkout -b feature/<section-name>
 
 # 2. Develop — commit as you go
@@ -110,13 +110,14 @@ git add <files>
 git commit -m "feat: <short description>"
 
 # 3. User reviews → approves merge
-git checkout master
-git merge feature/<section-name>        # fast-forward when possible
+git checkout main
+git pull origin main                    # catch any remote changes first
+git merge --no-ff feature/<section-name>
 
 # 4. Push to origin only after user confirms
-git push origin master
+git push origin main
 
-# 5. Clean up the feature branch (optional but recommended)
+# 5. Clean up the feature branch
 git branch -d feature/<section-name>
 git push origin --delete feature/<section-name>
 ```
@@ -130,7 +131,7 @@ git push origin --delete feature/<section-name>
 | `chore/` | Dependency updates, config, tooling |
 
 ### What not to do
-- Do not `git push --force` to `master` or `origin/master` under any circumstances.
+- Do not `git push --force` to `main` or `origin/main` under any circumstances.
 - Do not amend commits that have already been pushed to origin.
 - Do not skip hooks (`--no-verify`).
 

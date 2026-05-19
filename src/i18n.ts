@@ -36,6 +36,16 @@ export interface Translations {
   // profile
   profileTitle: string;
   profileMenu: string[];
+  // auth
+  signIn: string;
+  signUp: string;
+  signOut: string;
+  emailLabel: string;
+  passwordLabel: string;
+  displayNameLabel: string;
+  noAccount: string;
+  haveAccount: string;
+  checkEmail: string;
   // data
   data: typeof enData | typeof heData;
 }
@@ -70,6 +80,15 @@ const en: Translations = {
   browseClasses: 'Browse Classes',
   profileTitle: 'Profile',
   profileMenu: ['My Bookings', 'My Profile', 'Payment Methods', 'Purchase History', 'Notifications', 'Help & Support'],
+  signIn: 'Sign In',
+  signUp: 'Sign Up',
+  signOut: 'Sign Out',
+  emailLabel: 'Email',
+  passwordLabel: 'Password',
+  displayNameLabel: 'Full Name',
+  noAccount: "Don't have an account?",
+  haveAccount: 'Already have an account?',
+  checkEmail: 'Check your email to confirm your account',
   data: enData,
 };
 
@@ -103,6 +122,15 @@ const he: Translations = {
   browseClasses: 'עיון בשיעורים',
   profileTitle: 'Profile',
   profileMenu: ['ההזמנות שלי', 'הפרופיל שלי', 'אמצעי תשלום', 'היסטוריית רכישות', 'התראות', 'עזרה ותמיכה'],
+  signIn: 'כניסה',
+  signUp: 'הרשמה',
+  signOut: 'יציאה',
+  emailLabel: 'אימייל',
+  passwordLabel: 'סיסמה',
+  displayNameLabel: 'שם מלא',
+  noAccount: 'אין לך חשבון?',
+  haveAccount: 'יש לך כבר חשבון?',
+  checkEmail: 'בדוק את האימייל לאישור החשבון',
   data: heData,
 };
 

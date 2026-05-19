@@ -2,6 +2,7 @@ import { Stack } from 'expo-router';
 import { useState, useEffect } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
+import { AuthProvider, useAuth } from '@/src/lib/auth';
 import {
   Inter_300Light,
   Inter_400Regular,
@@ -47,15 +48,23 @@ export default function RootLayout() {
     FrankRuhlLibre_500Medium,
   });
 
-  useEffect(() => {
-    if (fontsLoaded) SplashScreen.hideAsync();
-  }, [fontsLoaded]);
-
-  if (!fontsLoaded) return null;
-
   return (
-    <LocaleContext.Provider value={{ locale, setLocale, t }}>
-      <Stack screenOptions={{ headerShown: false }} />
-    </LocaleContext.Provider>
+    <AuthProvider>
+      <LocaleContext.Provider value={{ locale, setLocale, t }}>
+        <RootLayoutInner fontsLoaded={fontsLoaded} />
+      </LocaleContext.Provider>
+    </AuthProvider>
   );
+}
+
+function RootLayoutInner({ fontsLoaded }: { fontsLoaded: boolean }) {
+  const { loading: authLoading } = useAuth();
+
+  useEffect(() => {
+    if (fontsLoaded && !authLoading) SplashScreen.hideAsync();
+  }, [fontsLoaded, authLoading]);
+
+  if (!fontsLoaded || authLoading) return null;
+
+  return <Stack screenOptions={{ headerShown: false }} />;
 }

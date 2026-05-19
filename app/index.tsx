@@ -1,15 +1,9 @@
-import { Text, View } from "react-native";
+import { Redirect } from 'expo-router';
+import { useAuth } from '@/src/lib/auth';
 
 export default function Index() {
-  return (
-    <View
-      style={{
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-      }}
-    >
-      <Text>Hello Expo.</Text>
-    </View>
-  );
+  const { session } = useAuth();
+  return session
+    ? <Redirect href={'/(tabs)' as any} />
+    : <Redirect href={'/(auth)/login' as any} />;
 }

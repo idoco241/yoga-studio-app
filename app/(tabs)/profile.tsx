@@ -2,19 +2,29 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-nati
 import { Icon } from '@/src/components';
 import { colors, spacing, fontSize, fonts, radii } from '@/src/theme';
 import { useLocale } from '@/src/i18n';
+import { useAuth } from '@/src/lib/auth';
 
-function MenuRow({ label, onPress }: { label: string; onPress?: () => void }) {
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+function MenuRow({ label, onPress, destructive }: { label: string; onPress?: () => void; destructive?: boolean }) {
   return (
     <TouchableOpacity style={styles.menuRow} onPress={onPress} activeOpacity={0.7}>
-      <Text style={styles.menuLabel}>{label}</Text>
-      <Icon name="chevron-right" size={20} color={colors.fgMuted} />
+      <Text style={[styles.menuLabel, destructive && styles.menuLabelDestructive]}>{label}</Text>
+      {!destructive && <Icon name="chevron-right" size={20} color={colors.fgMuted} />}
     </TouchableOpacity>
   );
 }
 
 export default function ProfileScreen() {
   const { t } = useLocale();
-  const { user } = t.data;
+  const { session, profile, signOut } = useAuth();
+
+  const displayName = profile?.display_name || session?.user.email?.split('@')[0] || '';
+  const email = session?.user.email || '';
 
   return (
     <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
@@ -27,10 +37,10 @@ export default function ProfileScreen() {
       {/* User */}
       <View style={styles.userSection}>
         <View style={styles.avatar}>
-          <Text style={styles.initials}>{user.initials}</Text>
+          <Text style={styles.initials}>{initials(displayName)}</Text>
         </View>
-        <Text style={styles.userName}>{user.name}</Text>
-        <Text style={styles.userEmail}>{user.email}</Text>
+        <Text style={styles.userName}>{displayName}</Text>
+        <Text style={styles.userEmail}>{email}</Text>
       </View>
 
       {/* Menu */}
@@ -38,6 +48,7 @@ export default function ProfileScreen() {
         {t.profileMenu.map((label, i) => (
           <MenuRow key={i} label={label} />
         ))}
+        <MenuRow label={t.signOut} onPress={signOut} destructive />
       </View>
     </ScrollView>
   );
@@ -95,4 +106,5 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
   },
   menuLabel: { fontSize: 15, color: colors.fg },
+  menuLabelDestructive: { color: colors.destructive },
 });

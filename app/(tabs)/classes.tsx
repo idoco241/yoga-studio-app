@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { PillButton, Card, Icon } from '@/src/components';
@@ -78,14 +78,17 @@ export default function ClassesScreen() {
   const { t } = useLocale();
   const today = useMemo(() => new Date(), []);
   const [dateIdx, setDateIdx] = useState(0);
+  const dateScrollRef = useRef<ScrollView>(null);
   const [tab, setTab] = useState(t.classTabs[0]);
 
+  // today → Saturday of the following week (8–14 days depending on current day)
+  const daysToShow = (6 - today.getDay()) + 8;
   const weekDates = useMemo(() =>
-    Array.from({ length: 7 }, (_, i) => {
+    Array.from({ length: daysToShow }, (_, i) => {
       const d = new Date(today);
       d.setDate(today.getDate() + i);
       return d;
-    }), [today]);
+    }), [today, daysToShow]);
 
   const selectedDate = weekDates[dateIdx];
   const categoryFilter = tab === t.classTabs[0] ? undefined : tab.toLowerCase();
@@ -103,8 +106,15 @@ export default function ClassesScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Date strip — always RTL so today is on the right */}
-        <View style={[styles.dateStrip, { flexDirection: 'row-reverse' }]}>
+        {/* Date strip — scrollable, RTL so today is on the right */}
+        <ScrollView
+          ref={dateScrollRef}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          onContentSizeChange={() => dateScrollRef.current?.scrollToEnd({ animated: false })}
+          style={styles.dateScroll}
+          contentContainerStyle={styles.dateScrollContent}
+        >
           {weekDates.map((d, i) => {
             const active = i === dateIdx;
             const dayLabel = DAY_LABELS[d.getDay()];
@@ -120,7 +130,7 @@ export default function ClassesScreen() {
               </TouchableOpacity>
             );
           })}
-        </View>
+        </ScrollView>
 
         {/* Category tabs */}
         <View style={styles.tabs}>
@@ -188,13 +198,10 @@ const styles = StyleSheet.create({
     lineHeight: 36,
   },
   filterBtn: { padding: 6 },
-  dateStrip: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: spacing[3],
-  },
+  dateScroll: { marginBottom: spacing[3] },
+  dateScrollContent: { flexDirection: 'row-reverse' },
   datePill: {
-    flex: 1,
+    width: 44,
     alignItems: 'center',
     paddingVertical: 6,
     paddingBottom: 10,

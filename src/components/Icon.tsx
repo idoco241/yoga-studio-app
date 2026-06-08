@@ -10,6 +10,7 @@ const ICON_MAP: Record<string, keyof typeof Ionicons.glyphMap> = {
   'bookmark-fill':'bookmark',
   user:           'person-outline',
   users:          'people-outline',
+  'chevron-left': 'chevron-back',
   'chevron-right':'chevron-forward',
   filter:         'options-outline',
   settings:       'settings-outline',

@@ -56,7 +56,6 @@ function ClassCard({ cls, locale, bookLabel, onPress }: { cls: ClassRow; locale:
           <Text style={styles.className}>{cls.title}</Text>
           <Text style={styles.classMeta}>{formatTime(cls.scheduledAt, locale)} · {formatDuration(cls.durationMinutes, locale)}</Text>
           <Text style={styles.classMeta}>{cls.instructor}</Text>
-          {cls.location ? <Text style={styles.classMeta}>{cls.location}</Text> : null}
         </View>
         <View style={styles.classAction}>
           {booked ? (

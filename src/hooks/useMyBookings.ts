@@ -9,7 +9,6 @@ export interface MyBooking {
   instructor: string;
   scheduledAt: Date;
   durationMinutes: number;
-  location: string | null;
 }
 
 export function useMyBookings() {
@@ -25,7 +24,7 @@ export function useMyBookings() {
       .from('bookings')
       .select(`
         id, class_id, status,
-        classes(title, scheduled_at, duration_minutes, location,
+        classes(title, scheduled_at, duration_minutes,
           profiles!instructor_id(display_name))
       `)
       .in('status', ['confirmed', 'waitlist'])
@@ -41,7 +40,6 @@ export function useMyBookings() {
       instructor: row.classes?.profiles?.display_name ?? '',
       scheduledAt: new Date(row.classes?.scheduled_at),
       durationMinutes: row.classes?.duration_minutes ?? 0,
-      location: row.classes?.location ?? null,
     })).sort((a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime());
 
     setData(bookings);

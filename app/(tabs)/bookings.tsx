@@ -38,7 +38,6 @@ function BookingCard({ booking, locale, onCancel, onViewClass, cancelLabel, resc
       </View>
       <Text style={styles.bookingMeta}>{formatDateTime(booking.scheduledAt, locale)}</Text>
       <Text style={styles.bookingMeta}>{withFn(booking.instructor)}</Text>
-      {booking.location ? <Text style={styles.bookingMeta}>{booking.location}</Text> : null}
 
       <View style={styles.actions}>
         <PillButton variant="outline" size="sm" style={{ flex: 1 }} onPress={onCancel}>

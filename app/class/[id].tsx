@@ -15,7 +15,6 @@ interface ClassDetail {
   scheduledAt: Date;
   durationMinutes: number;
   maxCapacity: number;
-  location: string | null;
   instructorName: string;
   confirmedCount: number;
   myBookingId: string | null;
@@ -54,7 +53,6 @@ export default function ClassDetailScreen() {
       scheduledAt: new Date(row.scheduled_at),
       durationMinutes: row.duration_minutes,
       maxCapacity: row.max_capacity,
-      location: row.location ?? null,
       instructorName: row.instructor_name ?? '',
       confirmedCount: row.confirmed_count ?? 0,
       myBookingId: row.my_booking_id ?? null,
@@ -169,8 +167,7 @@ export default function ClassDetailScreen() {
         <Card style={styles.metaCard}>
           <MetaRow icon="calendar" label={formatDateTime(cls.scheduledAt, locale)} />
           <MetaRow icon="time" label={`${cls.durationMinutes} ${locale === 'he' ? 'דק׳' : 'min'}`} />
-          <MetaRow icon="person" label={cls.instructorName} />
-          {cls.location ? <MetaRow icon="location" label={cls.location} last /> : null}
+          <MetaRow icon="person" label={cls.instructorName} last />
         </Card>
 
         {/* Capacity */}

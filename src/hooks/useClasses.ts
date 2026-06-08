@@ -9,7 +9,6 @@ export interface ClassRow {
   scheduledAt: Date;
   durationMinutes: number;
   maxCapacity: number;
-  location: string | null;
   category: string;
   confirmedCount: number;
   myBookingId: string | null;
@@ -52,7 +51,6 @@ export function useClasses(date: Date, category?: string) {
           scheduledAt: new Date(row.scheduled_at),
           durationMinutes: row.duration_minutes,
           maxCapacity: row.max_capacity,
-          location: row.location ?? null,
           category: row.category,
           confirmedCount: row.confirmed_count ?? 0,
           myBookingId: row.my_booking_id ?? null,

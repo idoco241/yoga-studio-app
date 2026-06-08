@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
+import { useRouter } from 'expo-router';
 import { PillButton, Card, Icon } from '@/src/components';
 import { colors, spacing, fontSize, fonts, radii } from '@/src/theme';
 import { useLocale } from '@/src/i18n';
@@ -45,25 +46,43 @@ function ClassThumb({ idx, size = 96 }: { idx: number; size?: number }) {
   );
 }
 
-function ClassCard({ cls, locale, bookLabel }: { cls: ClassRow; locale: string; bookLabel: string }) {
+function ClassCard({ cls, locale, bookLabel, onPress }: { cls: ClassRow; locale: string; bookLabel: string; onPress: () => void }) {
+  const booked = cls.myBookingStatus === 'confirmed' || cls.myBookingStatus === 'waitlist';
   return (
-    <Card style={styles.classCard}>
-      <ClassThumb idx={cls.id.charCodeAt(0) % 4} />
-      <View style={styles.classDetails}>
-        <Text style={styles.className}>{cls.title}</Text>
-        <Text style={styles.classMeta}>{formatTime(cls.scheduledAt, locale)} · {formatDuration(cls.durationMinutes, locale)}</Text>
-        <Text style={styles.classMeta}>{cls.instructor}</Text>
-        {cls.location ? <Text style={styles.classMeta}>{cls.location}</Text> : null}
-      </View>
-      <View style={styles.classAction}>
-        <PillButton size="sm" variant="outline" onPress={() => {}}>{bookLabel}</PillButton>
-        <Text style={styles.capacity}>{cls.maxCapacity}</Text>
-      </View>
-    </Card>
+    <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
+      <Card style={styles.classCard}>
+        <ClassThumb idx={cls.id.charCodeAt(0) % 4} />
+        <View style={styles.classDetails}>
+          <Text style={styles.className}>{cls.title}</Text>
+          <Text style={styles.classMeta}>{formatTime(cls.scheduledAt, locale)} · {formatDuration(cls.durationMinutes, locale)}</Text>
+          <Text style={styles.classMeta}>{cls.instructor}</Text>
+          {cls.location ? <Text style={styles.classMeta}>{cls.location}</Text> : null}
+        </View>
+        <View style={styles.classAction}>
+          {booked ? (
+            <View style={styles.bookedBadge}>
+              <Icon name={cls.myBookingStatus === 'waitlist' ? 'time' : 'checkmark'} size={11} color={colors.primary} />
+              <Text style={styles.bookedBadgeText}>
+                {cls.myBookingStatus === 'waitlist'
+                  ? (locale === 'he' ? 'המתנה' : 'Waitlist')
+                  : (locale === 'he' ? 'רשום' : 'Booked')}
+              </Text>
+            </View>
+          ) : (
+            <PillButton size="sm" variant="outline" onPress={onPress}>{bookLabel}</PillButton>
+          )}
+          <View style={styles.signupRow}>
+            <Icon name="users" size={12} color={colors.fgMuted} />
+            <Text style={styles.capacity}>{cls.confirmedCount}/{cls.maxCapacity}</Text>
+          </View>
+        </View>
+      </Card>
+    </TouchableOpacity>
   );
 }
 
 export default function ClassesScreen() {
+  const router = useRouter();
   const { locale, t } = useLocale();
   const today = useMemo(() => new Date(), []);
   const [dateIdx, setDateIdx] = useState(0);
@@ -151,7 +170,13 @@ export default function ClassesScreen() {
         )}
 
         {!loading && !error && classes.map((c) => (
-          <ClassCard key={c.id} cls={c} locale={locale} bookLabel={t.book} />
+          <ClassCard
+            key={c.id}
+            cls={c}
+            locale={locale}
+            bookLabel={t.book}
+            onPress={() => router.push(`/class/${c.id}` as any)}
+          />
         ))}
       </View>
     </ScrollView>
@@ -237,6 +262,17 @@ const styles = StyleSheet.create({
   className: { fontFamily: fonts.sansMd, fontSize: 15, color: colors.fg, marginBottom: 4 },
   classMeta: { fontSize: fontSize.sm, color: colors.fgMuted, lineHeight: 20 },
   classAction: { alignItems: 'center', gap: 6, flexShrink: 0 },
+  bookedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: colors.primarySoft,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: radii.full,
+  },
+  bookedBadgeText: { fontSize: 10, fontFamily: fonts.sansMd, color: colors.primary },
+  signupRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   capacity: { fontSize: 11, color: colors.fgMuted },
   center: { paddingVertical: spacing[8], alignItems: 'center' },
   errorText: { fontSize: fontSize.sm, color: colors.fgMuted, textAlign: 'center' },

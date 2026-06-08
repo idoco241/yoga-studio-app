@@ -11,20 +11,22 @@ interface PillButtonProps {
   onPress?: () => void;
   style?: ViewStyle;
   fullWidth?: boolean;
+  disabled?: boolean;
 }
 
-export function PillButton({ children, variant = 'primary', size = 'md', onPress, style, fullWidth }: PillButtonProps) {
+export function PillButton({ children, variant = 'primary', size = 'md', onPress, style, fullWidth, disabled }: PillButtonProps) {
   const btnStyle = [
     styles.base,
     styles[size],
     styles[variant],
     fullWidth && styles.fullWidth,
+    disabled && styles.disabled,
     style,
   ];
   const textStyle = [styles.baseText, styles[`${size}Text` as keyof typeof styles], styles[`${variant}Text` as keyof typeof styles]];
 
   return (
-    <TouchableOpacity style={btnStyle} onPress={onPress} activeOpacity={0.8}>
+    <TouchableOpacity style={btnStyle} onPress={onPress} activeOpacity={0.8} disabled={disabled}>
       <Text style={textStyle}>{children}</Text>
     </TouchableOpacity>
   );
@@ -46,6 +48,7 @@ const styles = StyleSheet.create({
   outline:  { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: colors.primary },
   ghost:    { backgroundColor: 'transparent' },
   soft:     { backgroundColor: colors.primarySoft },
+  disabled: { opacity: 0.5 },
   // text sizes
   smText:  { fontSize: 13 },
   mdText:  { fontSize: 14 },

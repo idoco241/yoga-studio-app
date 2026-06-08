@@ -30,18 +30,3 @@ export const enData = {
 
   user: { name: 'Jessica Taylor', email: 'jessica.taylor@email.com', initials: 'JT' },
 } as const;
-
-export const heData = {
-  upcomingClasses: [
-    { date: 'יום ג׳, 20 במאי', time: '9:00',  name: 'ויניאסה פלואו' },
-    { date: 'יום ה׳, 22 במאי', time: '18:30', name: 'יוגה משקמת' },
-    { date: 'שבת, 24 במאי',   time: '10:00', name: 'פלואו עדין' },
-  ] as UpcomingClass[],
-
-  bookings: [
-    { id: '1', name: 'ויניאסה פלואו', date: 'יום ג׳, 20 במאי', time: '9:00',  instructor: 'אוליביה', studio: 'Studio A', signups: 12, capacity: 20, avatars: ['אכ', 'נל'] },
-    { id: '2', name: 'יוגה משקמת',   date: 'יום ה׳, 22 במאי', time: '18:30', instructor: 'סופיה',   studio: 'Studio B', signups: 8,  capacity: 16, avatars: ['מא', 'תש'] },
-  ] as BookingItem[],
-
-  user: { name: "ג'סיקה טיילור", email: 'jessica.taylor@email.com', initials: 'JT' },
-} as const;

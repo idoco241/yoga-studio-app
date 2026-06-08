@@ -21,23 +21,23 @@ interface ClassDetail {
   myBookingStatus: 'confirmed' | 'waitlist' | 'cancelled' | null;
 }
 
-function formatDateTime(date: Date, locale: string): string {
-  return date.toLocaleString(locale === 'he' ? 'he-IL' : 'en-US', {
+function formatDateTime(date: Date): string {
+  return date.toLocaleString('en-US', {
     weekday: 'long', month: 'long', day: 'numeric',
-    hour: 'numeric', minute: '2-digit', hour12: locale !== 'he',
+    hour: 'numeric', minute: '2-digit', hour12: true,
   });
 }
 
-const CATEGORY_LABEL: Record<string, Record<string, string>> = {
-  yoga:       { en: 'Yoga',       he: 'יוגה' },
-  meditation: { en: 'Meditation', he: 'מדיטציה' },
-  specialty:  { en: 'Specialty',  he: 'ייחודי' },
+const CATEGORY_LABEL: Record<string, string> = {
+  yoga: 'Yoga',
+  meditation: 'Meditation',
+  specialty: 'Specialty',
 };
 
 export default function ClassDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { locale, t } = useLocale();
+  const { t } = useLocale();
   const insets = useSafeAreaInsets();
 
   const [cls, setCls] = useState<ClassDetail | null>(null);
@@ -78,7 +78,7 @@ export default function ClassDetailScreen() {
     const { data, error } = await supabase.rpc('book_class', { p_class_id: cls.id });
     if (error) {
       setBooking(false);
-      Alert.alert(locale === 'he' ? 'שגיאה' : 'Error', error.message);
+      Alert.alert('Error', error.message);
       return;
     }
     const status = data as 'confirmed' | 'waitlist';
@@ -99,7 +99,7 @@ export default function ClassDetailScreen() {
     const { error } = await supabase.rpc('cancel_booking', { p_booking_id: cls.myBookingId });
     if (error) {
       setBooking(false);
-      Alert.alert(locale === 'he' ? 'שגיאה' : 'Error', error.message);
+      Alert.alert('Error', error.message);
       return;
     }
     // Optimistic update
@@ -124,14 +124,14 @@ export default function ClassDetailScreen() {
   if (!cls) {
     return (
       <View style={styles.centered}>
-        <Text style={styles.notFound}>{locale === 'he' ? 'שיעור לא נמצא' : 'Class not found'}</Text>
+        <Text style={styles.notFound}>Class not found</Text>
       </View>
     );
   }
 
   const isFull = cls.confirmedCount >= cls.maxCapacity;
   const alreadyBooked = cls.myBookingStatus === 'confirmed' || cls.myBookingStatus === 'waitlist';
-  const categoryLabel = CATEGORY_LABEL[cls.category]?.[locale] ?? cls.category;
+  const categoryLabel = CATEGORY_LABEL[cls.category] ?? cls.category;
 
   const topPad = insets.top + spacing[4];
   const bottomPad = (Platform.OS === 'android' ? insets.bottom : 0) + spacing[6];
@@ -145,7 +145,7 @@ export default function ClassDetailScreen() {
       {/* Back button */}
       <TouchableOpacity style={[styles.back, { paddingTop: topPad }]} onPress={() => router.back()}>
         <Icon name="chevron-left" size={22} color={colors.fg} />
-        <Text style={styles.backLabel}>{locale === 'he' ? 'חזרה' : 'Back'}</Text>
+        <Text style={styles.backLabel}>Back</Text>
       </TouchableOpacity>
 
       {/* Hero thumb */}
@@ -165,8 +165,8 @@ export default function ClassDetailScreen() {
 
         {/* Meta cards */}
         <Card style={styles.metaCard}>
-          <MetaRow icon="calendar" label={formatDateTime(cls.scheduledAt, locale)} />
-          <MetaRow icon="time" label={`${cls.durationMinutes} ${locale === 'he' ? 'דק׳' : 'min'}`} />
+          <MetaRow icon="calendar" label={formatDateTime(cls.scheduledAt)} />
+          <MetaRow icon="time" label={`${cls.durationMinutes} min`} />
           <MetaRow icon="person" label={cls.instructorName} last />
         </Card>
 
@@ -175,7 +175,7 @@ export default function ClassDetailScreen() {
           <Icon name="users" size={16} color={colors.fgMuted} />
           <Text style={styles.capacityText}>
             {cls.confirmedCount}/{cls.maxCapacity}
-            {isFull ? (locale === 'he' ? ' — מלא' : ' — Full') : ''}
+            {isFull ? ' — Full' : ''}
           </Text>
         </View>
 
@@ -188,9 +188,7 @@ export default function ClassDetailScreen() {
               color={cls.myBookingStatus === 'waitlist' ? colors.gold : colors.primary}
             />
             <Text style={styles.bookedText}>
-              {cls.myBookingStatus === 'waitlist'
-                ? (locale === 'he' ? 'אתה ברשימת המתנה' : 'You\'re on the waitlist')
-                : (locale === 'he' ? 'נרשמת לשיעור זה' : 'You\'re registered')}
+              {cls.myBookingStatus === 'waitlist' ? "You're on the waitlist" : "You're registered"}
             </Text>
           </View>
         ) : null}
@@ -203,11 +201,7 @@ export default function ClassDetailScreen() {
               onPress={handleBook}
               disabled={booking}
             >
-              {booking
-                ? (locale === 'he' ? 'מעבד...' : 'Processing...')
-                : isFull
-                  ? (locale === 'he' ? 'הצטרף לרשימת המתנה' : 'Join Waitlist')
-                  : t.book}
+              {booking ? 'Processing...' : isFull ? 'Join Waitlist' : t.book}
             </PillButton>
           ) : (
             <PillButton
@@ -217,9 +211,7 @@ export default function ClassDetailScreen() {
               onPress={handleCancel}
               disabled={booking}
             >
-              {booking
-                ? (locale === 'he' ? 'מעבד...' : 'Processing...')
-                : t.cancel}
+              {booking ? 'Processing...' : t.cancel}
             </PillButton>
           )}
         </View>

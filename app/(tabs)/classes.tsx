@@ -8,10 +8,7 @@ import { useClasses, type ClassRow } from '@/src/hooks/useClasses';
 
 const PHOTO_COLORS = ['#D3C2A4', '#DDD0BE', '#DECFB4', '#E0D4BA'] as const;
 
-const DAY_SHORT: Record<string, string[]> = {
-  en: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
-  he: ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", 'שבת'],
-};
+const DAY_LABELS = ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", 'שבת'];
 
 function formatTime(date: Date): string {
   return new Intl.DateTimeFormat('he-IL', {
@@ -21,20 +18,18 @@ function formatTime(date: Date): string {
   }).format(date);
 }
 
-function formatDuration(mins: number, locale: string): string {
-  return locale === 'he' ? `${mins} דק׳` : `${mins} min`;
+function formatDuration(mins: number): string {
+  return `${mins} min`;
 }
 
-function sectionLabel(date: Date, today: Date, locale: string): string {
+function sectionLabel(date: Date, today: Date): string {
   const isToday = date.toDateString() === today.toDateString();
   const tomorrow = new Date(today);
   tomorrow.setDate(today.getDate() + 1);
   const isTomorrow = date.toDateString() === tomorrow.toDateString();
-  if (isToday) return locale === 'he' ? 'היום' : 'Today';
-  if (isTomorrow) return locale === 'he' ? 'מחר' : 'Tomorrow';
-  return date.toLocaleDateString(locale === 'he' ? 'he-IL' : 'en-US', {
-    weekday: 'long', month: 'long', day: 'numeric',
-  });
+  if (isToday) return 'Today';
+  if (isTomorrow) return 'Tomorrow';
+  return date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 }
 
 function ClassThumb({ idx, size = 96 }: { idx: number; size?: number }) {
@@ -46,7 +41,7 @@ function ClassThumb({ idx, size = 96 }: { idx: number; size?: number }) {
   );
 }
 
-function ClassCard({ cls, locale, bookLabel, onPress }: { cls: ClassRow; locale: string; bookLabel: string; onPress: () => void }) {
+function ClassCard({ cls, bookLabel, onPress }: { cls: ClassRow; bookLabel: string; onPress: () => void }) {
   const booked = cls.myBookingStatus === 'confirmed' || cls.myBookingStatus === 'waitlist';
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
@@ -54,7 +49,7 @@ function ClassCard({ cls, locale, bookLabel, onPress }: { cls: ClassRow; locale:
         <ClassThumb idx={cls.id.charCodeAt(0) % 4} />
         <View style={styles.classDetails}>
           <Text style={styles.className}>{cls.title}</Text>
-          <Text style={styles.classMeta}>{formatTime(cls.scheduledAt)} · {formatDuration(cls.durationMinutes, locale)}</Text>
+          <Text style={styles.classMeta}>{formatTime(cls.scheduledAt)} · {formatDuration(cls.durationMinutes)}</Text>
           <Text style={styles.classMeta}>{cls.instructor}</Text>
         </View>
         <View style={styles.classAction}>
@@ -62,9 +57,7 @@ function ClassCard({ cls, locale, bookLabel, onPress }: { cls: ClassRow; locale:
             <View style={styles.bookedBadge}>
               <Icon name={cls.myBookingStatus === 'waitlist' ? 'time' : 'checkmark'} size={11} color={colors.primary} />
               <Text style={styles.bookedBadgeText}>
-                {cls.myBookingStatus === 'waitlist'
-                  ? (locale === 'he' ? 'המתנה' : 'Waitlist')
-                  : (locale === 'he' ? 'רשום' : 'Booked')}
+                {cls.myBookingStatus === 'waitlist' ? 'Waitlist' : 'Booked'}
               </Text>
             </View>
           ) : (
@@ -82,7 +75,7 @@ function ClassCard({ cls, locale, bookLabel, onPress }: { cls: ClassRow; locale:
 
 export default function ClassesScreen() {
   const router = useRouter();
-  const { locale, t } = useLocale();
+  const { t } = useLocale();
   const today = useMemo(() => new Date(), []);
   const [dateIdx, setDateIdx] = useState(0);
   const [tab, setTab] = useState(t.classTabs[0]);
@@ -110,11 +103,11 @@ export default function ClassesScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Date strip — 7 days from today; RTL flips the visual order so today is on the right */}
-        <View style={[styles.dateStrip, t.isRtl && { flexDirection: 'row-reverse' }]}>
+        {/* Date strip — always RTL so today is on the right */}
+        <View style={[styles.dateStrip, { flexDirection: 'row-reverse' }]}>
           {weekDates.map((d, i) => {
             const active = i === dateIdx;
-            const dayLabel = DAY_SHORT[locale]?.[d.getDay()] ?? DAY_SHORT.en[d.getDay()];
+            const dayLabel = DAY_LABELS[d.getDay()];
             return (
               <TouchableOpacity
                 key={i}
@@ -144,7 +137,7 @@ export default function ClassesScreen() {
       </View>
 
       <View style={styles.list}>
-        <Text style={styles.sectionLabel}>{sectionLabel(selectedDate, today, locale)}</Text>
+        <Text style={styles.sectionLabel}>{sectionLabel(selectedDate, today)}</Text>
 
         {loading && (
           <View style={styles.center}>
@@ -161,12 +154,8 @@ export default function ClassesScreen() {
         {!loading && !error && classes.length === 0 && (
           <Card style={styles.empty}>
             <Icon name="calendar" size={28} color={colors.fgMuted} />
-            <Text style={styles.emptyTitle}>
-              {locale === 'he' ? 'אין שיעורים ביום זה' : 'No classes this day'}
-            </Text>
-            <Text style={styles.emptySub}>
-              {locale === 'he' ? 'בחר תאריך אחר' : 'Try selecting another date'}
-            </Text>
+            <Text style={styles.emptyTitle}>No classes this day</Text>
+            <Text style={styles.emptySub}>Try selecting another date</Text>
           </Card>
         )}
 
@@ -174,7 +163,6 @@ export default function ClassesScreen() {
           <ClassCard
             key={c.id}
             cls={c}
-            locale={locale}
             bookLabel={t.book}
             onPress={() => router.push(`/class/${c.id}` as any)}
           />

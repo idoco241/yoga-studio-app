@@ -7,16 +7,15 @@ import { useLocale } from '@/src/i18n';
 import { useMyBookings, type MyBooking } from '@/src/hooks/useMyBookings';
 import { supabase } from '@/src/lib/supabase';
 
-function formatDateTime(date: Date, locale: string): string {
-  return date.toLocaleString(locale === 'he' ? 'he-IL' : 'en-US', {
+function formatDateTime(date: Date): string {
+  return date.toLocaleString('en-US', {
     weekday: 'short', month: 'short', day: 'numeric',
-    hour: 'numeric', minute: '2-digit', hour12: locale !== 'he',
+    hour: 'numeric', minute: '2-digit', hour12: true,
   });
 }
 
-function BookingCard({ booking, locale, onCancel, onViewClass, cancelLabel, rescheduleLabel, withFn }: {
+function BookingCard({ booking, onCancel, onViewClass, cancelLabel, rescheduleLabel, withFn }: {
   booking: MyBooking;
-  locale: string;
   onCancel: () => void;
   onViewClass: () => void;
   cancelLabel: string;
@@ -30,13 +29,11 @@ function BookingCard({ booking, locale, onCancel, onViewClass, cancelLabel, resc
         <Text style={styles.bookingName}>{booking.title}</Text>
         <View style={[styles.statusBadge, isWaitlist && styles.statusBadgeWaitlist]}>
           <Text style={[styles.statusText, isWaitlist && styles.statusTextWaitlist]}>
-            {isWaitlist
-              ? (locale === 'he' ? 'המתנה' : 'Waitlist')
-              : (locale === 'he' ? 'מאושר' : 'Confirmed')}
+            {isWaitlist ? 'Waitlist' : 'Confirmed'}
           </Text>
         </View>
       </View>
-      <Text style={styles.bookingMeta}>{formatDateTime(booking.scheduledAt, locale)}</Text>
+      <Text style={styles.bookingMeta}>{formatDateTime(booking.scheduledAt)}</Text>
       <Text style={styles.bookingMeta}>{withFn(booking.instructor)}</Text>
 
       <View style={styles.actions}>
@@ -44,7 +41,7 @@ function BookingCard({ booking, locale, onCancel, onViewClass, cancelLabel, resc
           {cancelLabel}
         </PillButton>
         <PillButton size="sm" style={{ flex: 1 }} onPress={onViewClass}>
-          {locale === 'he' ? 'פרטים' : 'Details'}
+          Details
         </PillButton>
       </View>
     </Card>
@@ -53,7 +50,7 @@ function BookingCard({ booking, locale, onCancel, onViewClass, cancelLabel, resc
 
 export default function BookingsScreen() {
   const router = useRouter();
-  const { locale, t } = useLocale();
+  const { t } = useLocale();
   const { data: bookings, loading, error, refetch } = useMyBookings();
 
   useFocusEffect(useCallback(() => { refetch(); }, [refetch]));
@@ -61,13 +58,11 @@ export default function BookingsScreen() {
   async function handleCancel(booking: MyBooking) {
     const confirmed = await new Promise<boolean>((resolve) => {
       Alert.alert(
-        locale === 'he' ? 'ביטול הזמנה' : 'Cancel Booking',
-        locale === 'he'
-          ? `לבטל את ${booking.title}?`
-          : `Cancel ${booking.title}?`,
+        'Cancel Booking',
+        `Cancel ${booking.title}?`,
         [
-          { text: locale === 'he' ? 'לא' : 'No',  style: 'cancel',      onPress: () => resolve(false) },
-          { text: locale === 'he' ? 'כן' : 'Yes', style: 'destructive', onPress: () => resolve(true)  },
+          { text: 'No',  style: 'cancel',      onPress: () => resolve(false) },
+          { text: 'Yes', style: 'destructive', onPress: () => resolve(true)  },
         ]
       );
     });
@@ -75,7 +70,7 @@ export default function BookingsScreen() {
 
     const { error: err } = await supabase.rpc('cancel_booking', { p_booking_id: booking.id });
     if (err) {
-      Alert.alert(locale === 'he' ? 'שגיאה' : 'Error', err.message);
+      Alert.alert('Error', err.message);
     } else {
       refetch();
     }
@@ -117,7 +112,6 @@ export default function BookingsScreen() {
           <BookingCard
             key={b.id}
             booking={b}
-            locale={locale}
             onCancel={() => handleCancel(b)}
             onViewClass={() => router.push(`/class/${b.classId}` as any)}
             cancelLabel={t.cancel}

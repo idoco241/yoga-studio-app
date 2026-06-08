@@ -1,5 +1,5 @@
 import { Stack } from 'expo-router';
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
 import { AuthProvider, useAuth } from '@/src/lib/auth';
@@ -24,14 +24,11 @@ import {
   FrankRuhlLibre_400Regular,
   FrankRuhlLibre_500Medium,
 } from '@expo-google-fonts/frank-ruhl-libre';
-import { LocaleContext, LOCALES, Locale } from '@/src/i18n';
+import { LocaleContext, translations } from '@/src/i18n';
 
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const [locale, setLocale] = useState<Locale>('en');
-  const t = LOCALES[locale];
-
   const [fontsLoaded] = useFonts({
     Inter_300Light,
     Inter_400Regular,
@@ -50,7 +47,7 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <LocaleContext.Provider value={{ locale, setLocale, t }}>
+      <LocaleContext.Provider value={{ t: translations }}>
         <RootLayoutInner fontsLoaded={fontsLoaded} />
       </LocaleContext.Provider>
     </AuthProvider>

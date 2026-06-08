@@ -1,5 +1,6 @@
 import { Tabs } from 'expo-router';
 import { Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/src/theme';
 import { useLocale } from '@/src/i18n';
@@ -18,6 +19,8 @@ function TabIcon({ name, focused }: { name: IoniconName; focused: boolean }) {
 
 export default function TabLayout() {
   const { t } = useLocale();
+  const insets = useSafeAreaInsets();
+  const bottomInset = Platform.OS === 'android' ? insets.bottom : 0;
 
   return (
     <Tabs
@@ -27,8 +30,8 @@ export default function TabLayout() {
           backgroundColor: colors.card,
           borderTopColor: colors.border,
           borderTopWidth: 1,
-          height: Platform.OS === 'ios' ? 84 : 64,
-          paddingBottom: Platform.OS === 'ios' ? 28 : 8,
+          height: Platform.OS === 'ios' ? 84 : 56 + bottomInset,
+          paddingBottom: Platform.OS === 'ios' ? 28 : 8 + bottomInset,
           paddingTop: 8,
         },
         tabBarActiveTintColor: colors.fg,

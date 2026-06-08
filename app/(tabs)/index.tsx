@@ -4,11 +4,12 @@ import { useRouter } from 'expo-router';
 import { Logo, PillButton, Card, Icon } from '@/src/components';
 import { colors, spacing, fontSize, fonts, radii } from '@/src/theme';
 import { useLocale } from '@/src/i18n';
+import { enData } from '@/src/data';
 
 export default function HomeScreen() {
   const router = useRouter();
   const { t } = useLocale();
-  const { upcomingClasses } = t.data;
+  const { upcomingClasses } = enData;
 
   return (
     <ScrollView

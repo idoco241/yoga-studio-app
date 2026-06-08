@@ -1,14 +1,7 @@
 import { createContext, useContext } from 'react';
-import { enData, heData } from './data';
-
-export type Locale = 'en' | 'he';
 
 export interface Translations {
-  dir: 'ltr' | 'rtl';
-  isRtl: boolean;
-  // nav — stays English in both locales
   nav: { home: string; classes: string; bookings: string; profile: string };
-  // home
   tagline: string;
   welcome: string[];
   bookClass: string;
@@ -16,12 +9,10 @@ export interface Translations {
   viewAllBookings: string;
   classBooked: string;
   classBookedSub: (name: string) => string;
-  // classes
   classesTitle: string;
   classTabs: string[];
   book: string;
   with: (name: string) => string;
-  // bookings
   bookingsTitle: string;
   cancel: string;
   reschedule: string;
@@ -29,10 +20,8 @@ export interface Translations {
   noBookings: string;
   noBookingsSub: string;
   browseClasses: string;
-  // profile
   profileTitle: string;
   profileMenu: string[];
-  // auth
   signIn: string;
   signUp: string;
   signOut: string;
@@ -42,12 +31,9 @@ export interface Translations {
   noAccount: string;
   haveAccount: string;
   checkEmail: string;
-  // data
-  data: typeof enData | typeof heData;
 }
 
-const en: Translations = {
-  dir: 'ltr', isRtl: false,
+export const translations: Translations = {
   nav: { home: 'Home', classes: 'Classes', bookings: 'Bookings', profile: 'Profile' },
   tagline: 'Move. Breathe. Be.',
   welcome: ['Welcome to your space', 'for balance and well-being.'],
@@ -78,56 +64,12 @@ const en: Translations = {
   noAccount: "Don't have an account?",
   haveAccount: 'Already have an account?',
   checkEmail: 'Check your email to confirm your account',
-  data: enData,
 };
-
-const he: Translations = {
-  dir: 'rtl', isRtl: true,
-  nav: { home: 'Home', classes: 'Classes', bookings: 'Bookings', profile: 'Profile' },
-  tagline: 'לזוז. לנשום. להיות.',
-  welcome: ['ברוכים הבאים למרחב שלכם', 'לאיזון ולרווחה.'],
-  bookClass: 'הזמינו שיעור',
-  classesThisWeek: 'השיעורים שלך השבוע',
-  viewAllBookings: 'הצג את כל ההזמנות',
-  classBooked: 'השיעור הוזמן!',
-  classBookedSub: (name) => `נרשמת לשיעור ${name}`,
-  classesTitle: 'Classes',
-  classTabs: ['All', 'Yoga', 'Meditation', 'Specialty'],
-  book: 'הזמן',
-  with: (name) => `עם ${name}`,
-  bookingsTitle: 'Bookings',
-  cancel: 'ביטול',
-  reschedule: 'שינוי מועד',
-  bookingCancelled: 'ההזמנה בוטלה',
-  noBookings: 'אין הזמנות עדיין',
-  noBookingsSub: 'עיינו בלוח הזמנים כדי להזמין שיעור ראשון',
-  browseClasses: 'עיון בשיעורים',
-  profileTitle: 'Profile',
-  profileMenu: ['ההזמנות שלי', 'הפרופיל שלי', 'אמצעי תשלום', 'היסטוריית רכישות', 'התראות', 'עזרה ותמיכה'],
-  signIn: 'כניסה',
-  signUp: 'הרשמה',
-  signOut: 'יציאה',
-  emailLabel: 'אימייל',
-  passwordLabel: 'סיסמה',
-  displayNameLabel: 'שם מלא',
-  noAccount: 'אין לך חשבון?',
-  haveAccount: 'יש לך כבר חשבון?',
-  checkEmail: 'בדוק את האימייל לאישור החשבון',
-  data: heData,
-};
-
-export const LOCALES: Record<Locale, Translations> = { en, he };
 
 export interface LocaleContextValue {
-  locale: Locale;
-  setLocale: (l: Locale) => void;
   t: Translations;
 }
 
-export const LocaleContext = createContext<LocaleContextValue>({
-  locale: 'en',
-  setLocale: () => {},
-  t: en,
-});
+export const LocaleContext = createContext<LocaleContextValue>({ t: translations });
 
 export const useLocale = () => useContext(LocaleContext);

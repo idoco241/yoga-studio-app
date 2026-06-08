@@ -1,15 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
 export interface ClassRow {
   id: string;
   title: string;
+  description: string | null;
   instructor: string;
   scheduledAt: Date;
   durationMinutes: number;
   maxCapacity: number;
-  location: string | null;
   category: string;
+  confirmedCount: number;
+  myBookingId: string | null;
+  myBookingStatus: 'confirmed' | 'waitlist' | 'cancelled' | null;
 }
 
 export function useClasses(date: Date, category?: string) {
@@ -17,6 +20,9 @@ export function useClasses(date: Date, category?: string) {
   const [data, setData] = useState<ClassRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [version, setVersion] = useState(0);
+
+  const refetch = useCallback(() => setVersion((v) => v + 1), []);
 
   useEffect(() => {
     let cancelled = false;
@@ -28,44 +34,40 @@ export function useClasses(date: Date, category?: string) {
     const end = new Date(date);
     end.setUTCHours(23, 59, 59, 999);
 
-    let query = supabase
-      .from('classes')
-      .select(
-        'id, title, scheduled_at, duration_minutes, max_capacity, location, category, instructor:profiles!instructor_id(display_name)'
-      )
-      .gte('scheduled_at', start.toISOString())
-      .lte('scheduled_at', end.toISOString())
-      .order('scheduled_at');
+    supabase
+      .rpc('get_classes_for_date', {
+        start_ts: start.toISOString(),
+        end_ts: end.toISOString(),
+      })
+      .then(({ data: rows, error: err }) => {
+        if (cancelled) return;
+        if (err) { setError(err.message); setLoading(false); return; }
 
-    if (category && category !== 'all') {
-      query = query.eq('category', category);
-    }
-
-    query.then(({ data: rows, error: err }) => {
-      if (cancelled) return;
-      if (err) {
-        setError(err.message);
-        setLoading(false);
-        return;
-      }
-      setData(
-        (rows ?? []).map((row: any) => ({
+        let classes: ClassRow[] = (rows ?? []).map((row: any) => ({
           id: row.id,
           title: row.title,
-          instructor: (row.instructor as any)?.display_name ?? '',
+          description: row.description ?? null,
+          instructor: row.instructor_name ?? '',
           scheduledAt: new Date(row.scheduled_at),
           durationMinutes: row.duration_minutes,
           maxCapacity: row.max_capacity,
-          location: row.location ?? null,
           category: row.category,
-        }))
-      );
-      setLoading(false);
-    });
+          confirmedCount: row.confirmed_count ?? 0,
+          myBookingId: row.my_booking_id ?? null,
+          myBookingStatus: row.my_booking_status ?? null,
+        }));
+
+        if (category && category !== 'all') {
+          classes = classes.filter((c) => c.category === category);
+        }
+
+        setData(classes);
+        setLoading(false);
+      });
 
     return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dateKey, category]);
+  }, [dateKey, category, version]);
 
-  return { data, loading, error };
+  return { data, loading, error, refetch };
 }

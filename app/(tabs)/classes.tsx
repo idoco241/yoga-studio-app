@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { PillButton, Card, Icon } from '@/src/components';
 import { colors, spacing, fontSize, fonts, radii } from '@/src/theme';
 import { useLocale } from '@/src/i18n';
@@ -7,33 +8,28 @@ import { useClasses, type ClassRow } from '@/src/hooks/useClasses';
 
 const PHOTO_COLORS = ['#D3C2A4', '#DDD0BE', '#DECFB4', '#E0D4BA'] as const;
 
-const DAY_SHORT: Record<string, string[]> = {
-  en: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
-  he: ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", 'שבת'],
-};
+const DAY_LABELS = ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", 'שבת'];
 
-function formatTime(date: Date, locale: string): string {
-  return new Intl.DateTimeFormat(locale === 'he' ? 'he-IL' : 'en-US', {
-    hour: 'numeric',
+function formatTime(date: Date): string {
+  return new Intl.DateTimeFormat('he-IL', {
+    hour: '2-digit',
     minute: '2-digit',
-    hour12: locale !== 'he',
+    hour12: false,
   }).format(date);
 }
 
-function formatDuration(mins: number, locale: string): string {
-  return locale === 'he' ? `${mins} דק׳` : `${mins} min`;
+function formatDuration(mins: number): string {
+  return `${mins} min`;
 }
 
-function sectionLabel(date: Date, today: Date, locale: string): string {
+function sectionLabel(date: Date, today: Date): string {
   const isToday = date.toDateString() === today.toDateString();
   const tomorrow = new Date(today);
   tomorrow.setDate(today.getDate() + 1);
   const isTomorrow = date.toDateString() === tomorrow.toDateString();
-  if (isToday) return locale === 'he' ? 'היום' : 'Today';
-  if (isTomorrow) return locale === 'he' ? 'מחר' : 'Tomorrow';
-  return date.toLocaleDateString(locale === 'he' ? 'he-IL' : 'en-US', {
-    weekday: 'long', month: 'long', day: 'numeric',
-  });
+  if (isToday) return 'Today';
+  if (isTomorrow) return 'Tomorrow';
+  return date.toLocaleDateString('he-IL', { weekday: 'long', month: 'long', day: 'numeric' });
 }
 
 function ClassThumb({ idx, size = 96 }: { idx: number; size?: number }) {
@@ -45,40 +41,60 @@ function ClassThumb({ idx, size = 96 }: { idx: number; size?: number }) {
   );
 }
 
-function ClassCard({ cls, locale, bookLabel }: { cls: ClassRow; locale: string; bookLabel: string }) {
+function ClassCard({ cls, bookLabel, onPress }: { cls: ClassRow; bookLabel: string; onPress: () => void }) {
+  const booked = cls.myBookingStatus === 'confirmed' || cls.myBookingStatus === 'waitlist';
   return (
-    <Card style={styles.classCard}>
-      <ClassThumb idx={cls.id.charCodeAt(0) % 4} />
-      <View style={styles.classDetails}>
-        <Text style={styles.className}>{cls.title}</Text>
-        <Text style={styles.classMeta}>{formatTime(cls.scheduledAt, locale)} · {formatDuration(cls.durationMinutes, locale)}</Text>
-        <Text style={styles.classMeta}>{cls.instructor}</Text>
-        {cls.location ? <Text style={styles.classMeta}>{cls.location}</Text> : null}
-      </View>
-      <View style={styles.classAction}>
-        <PillButton size="sm" variant="outline" onPress={() => {}}>{bookLabel}</PillButton>
-        <Text style={styles.capacity}>{cls.maxCapacity}</Text>
-      </View>
-    </Card>
+    <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
+      <Card style={styles.classCard}>
+        <ClassThumb idx={cls.id.charCodeAt(0) % 4} />
+        <View style={styles.classDetails}>
+          <Text style={styles.className}>{cls.title}</Text>
+          <Text style={styles.classMeta}>{formatTime(cls.scheduledAt)} · {formatDuration(cls.durationMinutes)}</Text>
+          <Text style={styles.classMeta}>{cls.instructor}</Text>
+        </View>
+        <View style={styles.classAction}>
+          {booked ? (
+            <View style={styles.bookedBadge}>
+              <Icon name={cls.myBookingStatus === 'waitlist' ? 'time' : 'checkmark'} size={11} color={colors.primary} />
+              <Text style={styles.bookedBadgeText}>
+                {cls.myBookingStatus === 'waitlist' ? 'Waitlist' : 'Booked'}
+              </Text>
+            </View>
+          ) : (
+            <PillButton size="sm" variant="outline" onPress={onPress}>{bookLabel}</PillButton>
+          )}
+          <View style={styles.signupRow}>
+            <Icon name="users" size={12} color={colors.fgMuted} />
+            <Text style={styles.capacity}>{cls.confirmedCount}/{cls.maxCapacity}</Text>
+          </View>
+        </View>
+      </Card>
+    </TouchableOpacity>
   );
 }
 
 export default function ClassesScreen() {
-  const { locale, t } = useLocale();
+  const router = useRouter();
+  const { t } = useLocale();
   const today = useMemo(() => new Date(), []);
   const [dateIdx, setDateIdx] = useState(0);
+  const dateScrollRef = useRef<ScrollView>(null);
   const [tab, setTab] = useState(t.classTabs[0]);
 
+  // today → Saturday of the following week (8–14 days depending on current day)
+  const daysToShow = (6 - today.getDay()) + 8;
   const weekDates = useMemo(() =>
-    Array.from({ length: 7 }, (_, i) => {
+    Array.from({ length: daysToShow }, (_, i) => {
       const d = new Date(today);
       d.setDate(today.getDate() + i);
       return d;
-    }), [today]);
+    }), [today, daysToShow]);
 
   const selectedDate = weekDates[dateIdx];
   const categoryFilter = tab === t.classTabs[0] ? undefined : tab.toLowerCase();
-  const { data: classes, loading, error } = useClasses(selectedDate, categoryFilter);
+  const { data: classes, loading, error, refetch } = useClasses(selectedDate, categoryFilter);
+
+  useFocusEffect(useCallback(() => { refetch(); }, [refetch]));
 
   return (
     <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
@@ -90,11 +106,18 @@ export default function ClassesScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Date strip — 7 days from today */}
-        <View style={styles.dateStrip}>
+        {/* Date strip — scrollable, RTL so today is on the right */}
+        <ScrollView
+          ref={dateScrollRef}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          onContentSizeChange={() => dateScrollRef.current?.scrollToEnd({ animated: false })}
+          style={styles.dateScroll}
+          contentContainerStyle={styles.dateScrollContent}
+        >
           {weekDates.map((d, i) => {
             const active = i === dateIdx;
-            const dayLabel = DAY_SHORT[locale]?.[d.getDay()] ?? DAY_SHORT.en[d.getDay()];
+            const dayLabel = DAY_LABELS[d.getDay()];
             return (
               <TouchableOpacity
                 key={i}
@@ -107,7 +130,7 @@ export default function ClassesScreen() {
               </TouchableOpacity>
             );
           })}
-        </View>
+        </ScrollView>
 
         {/* Category tabs */}
         <View style={styles.tabs}>
@@ -124,7 +147,7 @@ export default function ClassesScreen() {
       </View>
 
       <View style={styles.list}>
-        <Text style={styles.sectionLabel}>{sectionLabel(selectedDate, today, locale)}</Text>
+        <Text style={styles.sectionLabel}>{sectionLabel(selectedDate, today)}</Text>
 
         {loading && (
           <View style={styles.center}>
@@ -141,17 +164,18 @@ export default function ClassesScreen() {
         {!loading && !error && classes.length === 0 && (
           <Card style={styles.empty}>
             <Icon name="calendar" size={28} color={colors.fgMuted} />
-            <Text style={styles.emptyTitle}>
-              {locale === 'he' ? 'אין שיעורים ביום זה' : 'No classes this day'}
-            </Text>
-            <Text style={styles.emptySub}>
-              {locale === 'he' ? 'בחר תאריך אחר' : 'Try selecting another date'}
-            </Text>
+            <Text style={styles.emptyTitle}>No classes this day</Text>
+            <Text style={styles.emptySub}>Try selecting another date</Text>
           </Card>
         )}
 
         {!loading && !error && classes.map((c) => (
-          <ClassCard key={c.id} cls={c} locale={locale} bookLabel={t.book} />
+          <ClassCard
+            key={c.id}
+            cls={c}
+            bookLabel={t.book}
+            onPress={() => router.push(`/class/${c.id}` as any)}
+          />
         ))}
       </View>
     </ScrollView>
@@ -174,13 +198,10 @@ const styles = StyleSheet.create({
     lineHeight: 36,
   },
   filterBtn: { padding: 6 },
-  dateStrip: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: spacing[3],
-  },
+  dateScroll: { marginBottom: spacing[3] },
+  dateScrollContent: { flexDirection: 'row-reverse' },
   datePill: {
-    flex: 1,
+    width: 44,
     alignItems: 'center',
     paddingVertical: 6,
     paddingBottom: 10,
@@ -237,6 +258,17 @@ const styles = StyleSheet.create({
   className: { fontFamily: fonts.sansMd, fontSize: 15, color: colors.fg, marginBottom: 4 },
   classMeta: { fontSize: fontSize.sm, color: colors.fgMuted, lineHeight: 20 },
   classAction: { alignItems: 'center', gap: 6, flexShrink: 0 },
+  bookedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: colors.primarySoft,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: radii.full,
+  },
+  bookedBadgeText: { fontSize: 10, fontFamily: fonts.sansMd, color: colors.primary },
+  signupRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   capacity: { fontSize: 11, color: colors.fgMuted },
   center: { paddingVertical: spacing[8], alignItems: 'center' },
   errorText: { fontSize: fontSize.sm, color: colors.fgMuted, textAlign: 'center' },

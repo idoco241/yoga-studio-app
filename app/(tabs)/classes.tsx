@@ -1,11 +1,40 @@
-import { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
-import { PillButton, Card, Icon, AvatarStack } from '@/src/components';
+import { useMemo, useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
+import { PillButton, Card, Icon } from '@/src/components';
 import { colors, spacing, fontSize, fonts, radii } from '@/src/theme';
 import { useLocale } from '@/src/i18n';
-import type { ClassItem } from '@/src/data';
+import { useClasses, type ClassRow } from '@/src/hooks/useClasses';
 
 const PHOTO_COLORS = ['#D3C2A4', '#DDD0BE', '#DECFB4', '#E0D4BA'] as const;
+
+const DAY_SHORT: Record<string, string[]> = {
+  en: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+  he: ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", 'שבת'],
+};
+
+function formatTime(date: Date, locale: string): string {
+  return new Intl.DateTimeFormat(locale === 'he' ? 'he-IL' : 'en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: locale !== 'he',
+  }).format(date);
+}
+
+function formatDuration(mins: number, locale: string): string {
+  return locale === 'he' ? `${mins} דק׳` : `${mins} min`;
+}
+
+function sectionLabel(date: Date, today: Date, locale: string): string {
+  const isToday = date.toDateString() === today.toDateString();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
+  const isTomorrow = date.toDateString() === tomorrow.toDateString();
+  if (isToday) return locale === 'he' ? 'היום' : 'Today';
+  if (isTomorrow) return locale === 'he' ? 'מחר' : 'Tomorrow';
+  return date.toLocaleDateString(locale === 'he' ? 'he-IL' : 'en-US', {
+    weekday: 'long', month: 'long', day: 'numeric',
+  });
+}
 
 function ClassThumb({ idx, size = 96 }: { idx: number; size?: number }) {
   return (
@@ -16,39 +45,44 @@ function ClassThumb({ idx, size = 96 }: { idx: number; size?: number }) {
   );
 }
 
-function ClassRow({ cls, book, bookLabel }: { cls: ClassItem; book: string; bookLabel: (name: string) => string }) {
-  const { t } = useLocale();
+function ClassCard({ cls, locale, bookLabel }: { cls: ClassRow; locale: string; bookLabel: string }) {
   return (
     <Card style={styles.classCard}>
-      <ClassThumb idx={cls.img} />
+      <ClassThumb idx={cls.id.charCodeAt(0) % 4} />
       <View style={styles.classDetails}>
-        <Text style={styles.className}>{cls.name}</Text>
-        <Text style={styles.classMeta}>{cls.time} · {cls.duration}</Text>
-        <Text style={styles.classMeta}>{t.with(cls.instructor)}</Text>
-        <Text style={styles.classMeta}>{cls.studio}</Text>
+        <Text style={styles.className}>{cls.title}</Text>
+        <Text style={styles.classMeta}>{formatTime(cls.scheduledAt, locale)} · {formatDuration(cls.durationMinutes, locale)}</Text>
+        <Text style={styles.classMeta}>{cls.instructor}</Text>
+        {cls.location ? <Text style={styles.classMeta}>{cls.location}</Text> : null}
       </View>
       <View style={styles.classAction}>
-        <PillButton size="sm" variant="outline" onPress={() => {}}>{book}</PillButton>
-        <View style={styles.signups}>
-          <Icon name="users" size={12} color={colors.fgMuted} />
-          <Text style={styles.signupCount}>{cls.signups}/{cls.capacity}</Text>
-        </View>
-        <AvatarStack avatars={cls.avatars} signups={cls.signups} size={18} />
+        <PillButton size="sm" variant="outline" onPress={() => {}}>{bookLabel}</PillButton>
+        <Text style={styles.capacity}>{cls.maxCapacity}</Text>
       </View>
     </Card>
   );
 }
 
 export default function ClassesScreen() {
-  const { t } = useLocale();
+  const { locale, t } = useLocale();
+  const today = useMemo(() => new Date(), []);
+  const [dateIdx, setDateIdx] = useState(0);
   const [tab, setTab] = useState(t.classTabs[0]);
-  const [dateIdx, setDateIdx] = useState(t.weekSelectedIdx);
-  const { todayClasses, tomorrowClasses } = t.data;
+
+  const weekDates = useMemo(() =>
+    Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(today);
+      d.setDate(today.getDate() + i);
+      return d;
+    }), [today]);
+
+  const selectedDate = weekDates[dateIdx];
+  const categoryFilter = tab === t.classTabs[0] ? undefined : tab.toLowerCase();
+  const { data: classes, loading, error } = useClasses(selectedDate, categoryFilter);
 
   return (
     <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
       <View style={styles.header}>
-        {/* Title + filter */}
         <View style={styles.titleRow}>
           <Text style={styles.title}>{t.classesTitle}</Text>
           <TouchableOpacity style={styles.filterBtn}>
@@ -56,20 +90,19 @@ export default function ClassesScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Date strip — dates ascend right-to-left, so reversed */}
+        {/* Date strip — 7 days from today */}
         <View style={styles.dateStrip}>
-          {[...t.weekDates].reverse().map((d, i) => {
-            // Reversed array: idx in reversed array corresponds to (length-1-i) in original
-            const origIdx = t.weekDates.length - 1 - i;
-            const active = origIdx === dateIdx;
+          {weekDates.map((d, i) => {
+            const active = i === dateIdx;
+            const dayLabel = DAY_SHORT[locale]?.[d.getDay()] ?? DAY_SHORT.en[d.getDay()];
             return (
               <TouchableOpacity
-                key={d.day}
+                key={i}
                 style={styles.datePill}
-                onPress={() => setDateIdx(origIdx)}
+                onPress={() => setDateIdx(i)}
               >
-                <Text style={[styles.dateNum, active && styles.dateNumActive]}>{d.day}</Text>
-                <Text style={[styles.dateLabel, active && styles.dateLabelActive]}>{d.label}</Text>
+                <Text style={[styles.dateNum, active && styles.dateNumActive]}>{d.getDate()}</Text>
+                <Text style={[styles.dateLabel, active && styles.dateLabelActive]}>{dayLabel}</Text>
                 {active && <View style={styles.dateUnderline} />}
               </TouchableOpacity>
             );
@@ -91,13 +124,34 @@ export default function ClassesScreen() {
       </View>
 
       <View style={styles.list}>
-        <Text style={styles.sectionLabel}>{t.today}</Text>
-        {todayClasses.map((c) => (
-          <ClassRow key={c.id} cls={c} book={t.book} bookLabel={t.classBookedSub} />
-        ))}
-        <Text style={[styles.sectionLabel, { marginTop: spacing[3] }]}>{t.tomorrow}</Text>
-        {tomorrowClasses.map((c) => (
-          <ClassRow key={c.id} cls={c} book={t.book} bookLabel={t.classBookedSub} />
+        <Text style={styles.sectionLabel}>{sectionLabel(selectedDate, today, locale)}</Text>
+
+        {loading && (
+          <View style={styles.center}>
+            <ActivityIndicator color={colors.primary} />
+          </View>
+        )}
+
+        {!loading && error && (
+          <View style={styles.center}>
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        )}
+
+        {!loading && !error && classes.length === 0 && (
+          <Card style={styles.empty}>
+            <Icon name="calendar" size={28} color={colors.fgMuted} />
+            <Text style={styles.emptyTitle}>
+              {locale === 'he' ? 'אין שיעורים ביום זה' : 'No classes this day'}
+            </Text>
+            <Text style={styles.emptySub}>
+              {locale === 'he' ? 'בחר תאריך אחר' : 'Try selecting another date'}
+            </Text>
+          </Card>
+        )}
+
+        {!loading && !error && classes.map((c) => (
+          <ClassCard key={c.id} cls={c} locale={locale} bookLabel={t.book} />
         ))}
       </View>
     </ScrollView>
@@ -120,7 +174,6 @@ const styles = StyleSheet.create({
     lineHeight: 36,
   },
   filterBtn: { padding: 6 },
-  // date strip
   dateStrip: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -150,7 +203,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.gold,
     borderRadius: 2,
   },
-  // category tabs
   tabs: {
     flexDirection: 'row',
     borderBottomWidth: 1,
@@ -166,9 +218,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.gold,
     borderRadius: 2,
   },
-  // list
   list: { padding: spacing[6], paddingTop: spacing[4] },
-  sectionLabel: { fontFamily: fonts.sansMd, fontSize: 13, color: colors.fg, marginBottom: spacing[3] },
+  sectionLabel: {
+    fontFamily: fonts.sansMd,
+    fontSize: 13,
+    color: colors.fg,
+    marginBottom: spacing[3],
+  },
   classCard: {
     flexDirection: 'row',
     padding: spacing[3],
@@ -181,6 +237,10 @@ const styles = StyleSheet.create({
   className: { fontFamily: fonts.sansMd, fontSize: 15, color: colors.fg, marginBottom: 4 },
   classMeta: { fontSize: fontSize.sm, color: colors.fgMuted, lineHeight: 20 },
   classAction: { alignItems: 'center', gap: 6, flexShrink: 0 },
-  signups: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  signupCount: { fontSize: 11, color: colors.fgMuted },
+  capacity: { fontSize: 11, color: colors.fgMuted },
+  center: { paddingVertical: spacing[8], alignItems: 'center' },
+  errorText: { fontSize: fontSize.sm, color: colors.fgMuted, textAlign: 'center' },
+  empty: { padding: spacing[6], alignItems: 'center', gap: spacing[3] },
+  emptyTitle: { fontFamily: fonts.sansMd, fontSize: 15, color: colors.fg },
+  emptySub: { fontSize: fontSize.sm, color: colors.fgMuted },
 });

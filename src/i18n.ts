@@ -18,11 +18,7 @@ export interface Translations {
   classBookedSub: (name: string) => string;
   // classes
   classesTitle: string;
-  today: string;
-  tomorrow: string;
   classTabs: string[];
-  weekDates: { day: number; label: string }[];
-  weekSelectedIdx: number;
   book: string;
   with: (name: string) => string;
   // bookings
@@ -61,14 +57,7 @@ const en: Translations = {
   classBooked: 'Class booked!',
   classBookedSub: (name) => `You're registered for ${name}`,
   classesTitle: 'Classes',
-  today: 'Today, May 20',
-  tomorrow: 'Tomorrow, May 21',
   classTabs: ['All', 'Yoga', 'Meditation', 'Specialty'],
-  weekDates: [
-    { day: 17, label: 'Sat' }, { day: 18, label: 'Sun' }, { day: 19, label: 'Mon' },
-    { day: 20, label: 'Tue' }, { day: 21, label: 'Wed' }, { day: 22, label: 'Thu' }, { day: 23, label: 'Fri' },
-  ],
-  weekSelectedIdx: 3,
   book: 'Book',
   with: (name) => `with ${name}`,
   bookingsTitle: 'Bookings',
@@ -103,14 +92,7 @@ const he: Translations = {
   classBooked: 'השיעור הוזמן!',
   classBookedSub: (name) => `נרשמת לשיעור ${name}`,
   classesTitle: 'Classes',
-  today: 'היום, 20 במאי',
-  tomorrow: 'מחר, 21 במאי',
   classTabs: ['All', 'Yoga', 'Meditation', 'Specialty'],
-  weekDates: [
-    { day: 17, label: 'שבת' }, { day: 18, label: "א׳" }, { day: 19, label: "ב׳" },
-    { day: 20, label: "ג׳" }, { day: 21, label: "ד׳" }, { day: 22, label: "ה׳" }, { day: 23, label: "ו׳" },
-  ],
-  weekSelectedIdx: 3,
   book: 'הזמן',
   with: (name) => `עם ${name}`,
   bookingsTitle: 'Bookings',

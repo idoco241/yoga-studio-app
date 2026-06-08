@@ -1,5 +1,6 @@
+import { useCallback } from 'react';
 import { View, Text, ScrollView, ActivityIndicator, Alert, StyleSheet } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { PillButton, Card, Icon } from '@/src/components';
 import { colors, spacing, fontSize, fonts, radii } from '@/src/theme';
 import { useLocale } from '@/src/i18n';
@@ -55,6 +56,8 @@ export default function BookingsScreen() {
   const router = useRouter();
   const { locale, t } = useLocale();
   const { data: bookings, loading, error, refetch } = useMyBookings();
+
+  useFocusEffect(useCallback(() => { refetch(); }, [refetch]));
 
   async function handleCancel(booking: MyBooking) {
     const confirmed = await new Promise<boolean>((resolve) => {

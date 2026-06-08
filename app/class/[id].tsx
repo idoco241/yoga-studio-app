@@ -22,9 +22,9 @@ interface ClassDetail {
 }
 
 function formatDateTime(date: Date): string {
-  return date.toLocaleString('en-US', {
+  return date.toLocaleString('he-IL', {
     weekday: 'long', month: 'long', day: 'numeric',
-    hour: 'numeric', minute: '2-digit', hour12: true,
+    hour: '2-digit', minute: '2-digit', hour12: false,
   });
 }
 

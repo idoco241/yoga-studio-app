@@ -8,9 +8,9 @@ import { useMyBookings, type MyBooking } from '@/src/hooks/useMyBookings';
 import { supabase } from '@/src/lib/supabase';
 
 function formatDateTime(date: Date): string {
-  return date.toLocaleString('en-US', {
+  return date.toLocaleString('he-IL', {
     weekday: 'short', month: 'short', day: 'numeric',
-    hour: 'numeric', minute: '2-digit', hour12: true,
+    hour: '2-digit', minute: '2-digit', hour12: false,
   });
 }
 

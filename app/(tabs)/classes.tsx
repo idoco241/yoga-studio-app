@@ -29,7 +29,7 @@ function sectionLabel(date: Date, today: Date): string {
   const isTomorrow = date.toDateString() === tomorrow.toDateString();
   if (isToday) return 'Today';
   if (isTomorrow) return 'Tomorrow';
-  return date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  return date.toLocaleDateString('he-IL', { weekday: 'long', month: 'long', day: 'numeric' });
 }
 
 function ClassThumb({ idx, size = 96 }: { idx: number; size?: number }) {

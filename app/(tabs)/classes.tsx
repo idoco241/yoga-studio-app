@@ -13,11 +13,11 @@ const DAY_SHORT: Record<string, string[]> = {
   he: ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", 'שבת'],
 };
 
-function formatTime(date: Date, locale: string): string {
-  return new Intl.DateTimeFormat(locale === 'he' ? 'he-IL' : 'en-US', {
-    hour: 'numeric',
+function formatTime(date: Date): string {
+  return new Intl.DateTimeFormat('he-IL', {
+    hour: '2-digit',
     minute: '2-digit',
-    hour12: locale !== 'he',
+    hour12: false,
   }).format(date);
 }
 
@@ -54,7 +54,7 @@ function ClassCard({ cls, locale, bookLabel, onPress }: { cls: ClassRow; locale:
         <ClassThumb idx={cls.id.charCodeAt(0) % 4} />
         <View style={styles.classDetails}>
           <Text style={styles.className}>{cls.title}</Text>
-          <Text style={styles.classMeta}>{formatTime(cls.scheduledAt, locale)} · {formatDuration(cls.durationMinutes, locale)}</Text>
+          <Text style={styles.classMeta}>{formatTime(cls.scheduledAt)} · {formatDuration(cls.durationMinutes, locale)}</Text>
           <Text style={styles.classMeta}>{cls.instructor}</Text>
         </View>
         <View style={styles.classAction}>
@@ -110,8 +110,8 @@ export default function ClassesScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Date strip — 7 days from today */}
-        <View style={styles.dateStrip}>
+        {/* Date strip — 7 days from today; RTL flips the visual order so today is on the right */}
+        <View style={[styles.dateStrip, t.isRtl && { flexDirection: 'row-reverse' }]}>
           {weekDates.map((d, i) => {
             const active = i === dateIdx;
             const dayLabel = DAY_SHORT[locale]?.[d.getDay()] ?? DAY_SHORT.en[d.getDay()];

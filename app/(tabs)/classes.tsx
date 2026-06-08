@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { PillButton, Card, Icon } from '@/src/components';
 import { colors, spacing, fontSize, fonts, radii } from '@/src/theme';
 import { useLocale } from '@/src/i18n';
@@ -97,7 +97,9 @@ export default function ClassesScreen() {
 
   const selectedDate = weekDates[dateIdx];
   const categoryFilter = tab === t.classTabs[0] ? undefined : tab.toLowerCase();
-  const { data: classes, loading, error } = useClasses(selectedDate, categoryFilter);
+  const { data: classes, loading, error, refetch } = useClasses(selectedDate, categoryFilter);
+
+  useFocusEffect(useCallback(() => { refetch(); }, [refetch]));
 
   return (
     <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>

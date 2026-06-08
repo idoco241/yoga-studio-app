@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, StyleSheet, Alert } from 'react-native';
+import { useState, useEffect, useCallback } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, StyleSheet, Alert, Platform } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PillButton, Card, Icon } from '@/src/components';
 import { colors, spacing, fontSize, fonts, radii } from '@/src/theme';
 import { useLocale } from '@/src/i18n';
@@ -38,50 +39,59 @@ export default function ClassDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { locale, t } = useLocale();
+  const insets = useSafeAreaInsets();
 
   const [cls, setCls] = useState<ClassDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [booking, setBooking] = useState(false);
 
-  async function fetchClass() {
-    setLoading(true);
-    const { data, error } = await supabase.rpc('get_class_by_id', { p_class_id: id });
-    if (!error && data && data.length > 0) {
-      const row = data[0];
-      setCls({
-        id: row.id,
-        title: row.title,
-        description: row.description ?? null,
-        category: row.category,
-        scheduledAt: new Date(row.scheduled_at),
-        durationMinutes: row.duration_minutes,
-        maxCapacity: row.max_capacity,
-        location: row.location ?? null,
-        instructorName: row.instructor_name ?? '',
-        confirmedCount: row.confirmed_count ?? 0,
-        myBookingId: row.my_booking_id ?? null,
-        myBookingStatus: row.my_booking_status ?? null,
-      });
-    }
-    setLoading(false);
+  function applyRow(row: any) {
+    setCls({
+      id: row.id,
+      title: row.title,
+      description: row.description ?? null,
+      category: row.category,
+      scheduledAt: new Date(row.scheduled_at),
+      durationMinutes: row.duration_minutes,
+      maxCapacity: row.max_capacity,
+      location: row.location ?? null,
+      instructorName: row.instructor_name ?? '',
+      confirmedCount: row.confirmed_count ?? 0,
+      myBookingId: row.my_booking_id ?? null,
+      myBookingStatus: row.my_booking_status ?? null,
+    });
   }
 
-  useEffect(() => { fetchClass(); }, [id]);
+  const fetchClass = useCallback(async (showSpinner = false) => {
+    if (showSpinner) setLoading(true);
+    const { data, error } = await supabase.rpc('get_class_by_id', { p_class_id: id });
+    if (!error && data && data.length > 0) applyRow(data[0]);
+    if (showSpinner) setLoading(false);
+  }, [id]);
+
+  useEffect(() => {
+    setLoading(true);
+    fetchClass(false).then(() => setLoading(false));
+  }, [fetchClass]);
 
   async function handleBook() {
     if (!cls) return;
     setBooking(true);
     const { data, error } = await supabase.rpc('book_class', { p_class_id: cls.id });
-    setBooking(false);
     if (error) {
+      setBooking(false);
       Alert.alert(locale === 'he' ? 'שגיאה' : 'Error', error.message);
       return;
     }
-    const status = data as string;
-    const msg = status === 'confirmed'
-      ? (locale === 'he' ? `נרשמת לשיעור ${cls.title}` : `You're registered for ${cls.title}`)
-      : (locale === 'he' ? 'נוספת לרשימת המתנה' : 'Added to waitlist');
-    Alert.alert(locale === 'he' ? 'הצלחה' : 'Success', msg);
+    const status = data as 'confirmed' | 'waitlist';
+    // Optimistic update — count and badge change instantly
+    setCls((prev) => prev ? {
+      ...prev,
+      confirmedCount: status === 'confirmed' ? prev.confirmedCount + 1 : prev.confirmedCount,
+      myBookingStatus: status,
+    } : null);
+    setBooking(false);
+    // Silent background refresh to get the real booking ID
     fetchClass();
   }
 
@@ -89,11 +99,19 @@ export default function ClassDetailScreen() {
     if (!cls?.myBookingId) return;
     setBooking(true);
     const { error } = await supabase.rpc('cancel_booking', { p_booking_id: cls.myBookingId });
-    setBooking(false);
     if (error) {
+      setBooking(false);
       Alert.alert(locale === 'he' ? 'שגיאה' : 'Error', error.message);
       return;
     }
+    // Optimistic update
+    setCls((prev) => prev ? {
+      ...prev,
+      confirmedCount: Math.max(0, prev.confirmedCount - 1),
+      myBookingStatus: null,
+      myBookingId: null,
+    } : null);
+    setBooking(false);
     fetchClass();
   }
 
@@ -117,10 +135,17 @@ export default function ClassDetailScreen() {
   const alreadyBooked = cls.myBookingStatus === 'confirmed' || cls.myBookingStatus === 'waitlist';
   const categoryLabel = CATEGORY_LABEL[cls.category]?.[locale] ?? cls.category;
 
+  const topPad = insets.top + spacing[4];
+  const bottomPad = (Platform.OS === 'android' ? insets.bottom : 0) + spacing[6];
+
   return (
-    <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={styles.scroll}
+      contentContainerStyle={{ paddingBottom: bottomPad }}
+      showsVerticalScrollIndicator={false}
+    >
       {/* Back button */}
-      <TouchableOpacity style={styles.back} onPress={() => router.back()}>
+      <TouchableOpacity style={[styles.back, { paddingTop: topPad }]} onPress={() => router.back()}>
         <Icon name="chevron-left" size={22} color={colors.fg} />
         <Text style={styles.backLabel}>{locale === 'he' ? 'חזרה' : 'Back'}</Text>
       </TouchableOpacity>
@@ -224,7 +249,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    paddingTop: 60,
     paddingHorizontal: spacing[6],
     paddingBottom: spacing[3],
   },

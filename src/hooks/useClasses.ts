@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
 export interface ClassRow {
@@ -21,6 +21,9 @@ export function useClasses(date: Date, category?: string) {
   const [data, setData] = useState<ClassRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [version, setVersion] = useState(0);
+
+  const refetch = useCallback(() => setVersion((v) => v + 1), []);
 
   useEffect(() => {
     let cancelled = false;
@@ -66,7 +69,7 @@ export function useClasses(date: Date, category?: string) {
 
     return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dateKey, category]);
+  }, [dateKey, category, version]);
 
-  return { data, loading, error };
+  return { data, loading, error, refetch };
 }

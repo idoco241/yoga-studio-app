@@ -52,11 +52,13 @@ function ClassManageCard({
   cls,
   colorIdx,
   onRoster,
+  onEdit,
   onCancel,
 }: {
   cls: ManagedClass;
   colorIdx: number;
   onRoster: () => void;
+  onEdit: () => void;
   onCancel: () => void;
 }) {
   return (
@@ -79,9 +81,14 @@ function ClassManageCard({
               <Text style={styles.countText}>{cls.waitlistCount}</Text>
             </View>
           )}
-          <TouchableOpacity onPress={onCancel} style={styles.cancelIcon} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-            <Icon name="trash" size={15} color={colors.destructive} />
-          </TouchableOpacity>
+          <View style={styles.iconRow}>
+            <TouchableOpacity onPress={onEdit} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Icon name="pencil" size={15} color={colors.fgMuted} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={onCancel} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Icon name="trash" size={15} color={colors.destructive} />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
       <TouchableOpacity style={styles.rosterBtn} onPress={onRoster}>
@@ -206,6 +213,7 @@ export default function ManageScreen() {
               cls={cls}
               colorIdx={instructorIndex[cls.instructorName] ?? 0}
               onRoster={() => router.push(`/roster/${cls.id}` as any)}
+              onEdit={() => router.push(`/class/edit/${cls.id}` as any)}
               onCancel={() => handleCancel(cls)}
             />
           </View>
@@ -276,7 +284,7 @@ const styles = StyleSheet.create({
   cardRight: { alignItems: 'flex-end', gap: 4, flexShrink: 0 },
   countRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   countText: { fontSize: 12, color: colors.fgMuted },
-  cancelIcon: { marginTop: 4 },
+  iconRow: { flexDirection: 'row', gap: spacing[3], marginTop: 4 },
 
   rosterBtn: {
     flexDirection: 'row',

@@ -325,7 +325,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing[4],
+    marginBottom: spacing[2],
   },
   title: {
     fontFamily: fonts.serif,
@@ -365,11 +365,19 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   filterScroll: {
+    height: 52,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
     backgroundColor: colors.bg,
+    flexShrink: 0,
   },
-  filterContent: { paddingHorizontal: spacing[6], paddingVertical: spacing[3], gap: spacing[2] },
+  filterContent: {
+    paddingHorizontal: spacing[6],
+    paddingVertical: spacing[2],
+    gap: spacing[2],
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
   filterPill: {
     paddingHorizontal: 14, paddingVertical: 7,
     borderRadius: radii.full, borderWidth: 1,

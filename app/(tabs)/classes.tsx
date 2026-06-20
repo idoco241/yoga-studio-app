@@ -223,36 +223,37 @@ export default function ClassesScreen() {
         </View>
       </View>
 
-      {/* Instructor filter — also fixed, below the header */}
+      {/* Instructor filter — View wrapper hard-constrains height so ScrollView can't expand */}
       {staffNames.length > 0 && (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.filterScroll}
-          contentContainerStyle={styles.filterContent}
-        >
-          <TouchableOpacity
-            style={[styles.filterPill, activeInstructor === null && styles.filterPillActive]}
-            onPress={() => setActiveInstructor(null)}
+        <View style={styles.filterBar}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.filterContent}
           >
-            <Text style={[styles.filterText, activeInstructor === null && styles.filterTextActive]}>All</Text>
-          </TouchableOpacity>
-          {staffNames.map((name) => {
-            const active = activeInstructor === name;
-            const color = INSTRUCTOR_COLORS[staffColorIndex[name] % INSTRUCTOR_COLORS.length];
-            return (
-              <TouchableOpacity
-                key={name}
-                style={[styles.filterPill, active && { backgroundColor: color.bg, borderColor: color.bg }]}
-                onPress={() => setActiveInstructor(active ? null : name)}
-              >
-                <Text style={[styles.filterText, active && { color: color.fg, fontFamily: fonts.sansMd }]}>
-                  {name}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
+            <TouchableOpacity
+              style={[styles.filterPill, activeInstructor === null && styles.filterPillActive]}
+              onPress={() => setActiveInstructor(null)}
+            >
+              <Text style={[styles.filterText, activeInstructor === null && styles.filterTextActive]}>All</Text>
+            </TouchableOpacity>
+            {staffNames.map((name) => {
+              const active = activeInstructor === name;
+              const color = INSTRUCTOR_COLORS[staffColorIndex[name] % INSTRUCTOR_COLORS.length];
+              return (
+                <TouchableOpacity
+                  key={name}
+                  style={[styles.filterPill, active && { backgroundColor: color.bg, borderColor: color.bg }]}
+                  onPress={() => setActiveInstructor(active ? null : name)}
+                >
+                  <Text style={[styles.filterText, active && { color: color.fg, fontFamily: fonts.sansMd }]}>
+                    {name}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
       )}
 
       {/* Scrollable content — all days */}
@@ -362,16 +363,16 @@ const styles = StyleSheet.create({
     backgroundColor: colors.gold,
     borderRadius: 2,
   },
-  filterScroll: {
+  filterBar: {
     height: 44,
+    flexShrink: 0,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
     backgroundColor: colors.bg,
-    flexShrink: 0,
   },
   filterContent: {
+    height: 44,
     paddingHorizontal: spacing[6],
-    paddingVertical: 0,
     gap: spacing[2],
     alignItems: 'center',
     flexDirection: 'row',

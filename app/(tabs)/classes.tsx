@@ -1,12 +1,22 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { PillButton, Card, Icon } from '@/src/components';
 import { colors, spacing, fontSize, fonts, radii } from '@/src/theme';
 import { useLocale } from '@/src/i18n';
 import { useClasses, type ClassRow } from '@/src/hooks/useClasses';
+import { supabase } from '@/src/lib/supabase';
 
 const PHOTO_COLORS = ['#D3C2A4', '#DDD0BE', '#DECFB4', '#E0D4BA'] as const;
+
+const INSTRUCTOR_COLORS = [
+  { bg: '#6B7563', fg: '#fff' },
+  { bg: '#B8923F', fg: '#fff' },
+  { bg: '#7B6EA0', fg: '#fff' },
+  { bg: '#4A8E8B', fg: '#fff' },
+  { bg: '#C0634A', fg: '#fff' },
+  { bg: '#5B7EA6', fg: '#fff' },
+];
 
 const DAY_LABELS = ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", 'שבת'];
 
@@ -80,6 +90,19 @@ export default function ClassesScreen() {
   const [dateIdx, setDateIdx] = useState(0);
   const dateScrollRef = useRef<ScrollView>(null);
   const [tab, setTab] = useState(t.classTabs[0]);
+  const [activeInstructor, setActiveInstructor] = useState<string | null>(null);
+  const [staffNames, setStaffNames] = useState<string[]>([]);
+
+  // Fetch all staff names once — filter bar is always visible regardless of day/category
+  useEffect(() => {
+    supabase
+      .from('profiles')
+      .select('display_name')
+      .in('role', ['owner', 'instructor'])
+      .then(({ data }) => {
+        if (data) setStaffNames(data.map((r: any) => r.display_name || 'Unnamed'));
+      });
+  }, []);
 
   // today → Saturday of the following week (8–14 days depending on current day)
   const daysToShow = (6 - today.getDay()) + 8;
@@ -93,6 +116,18 @@ export default function ClassesScreen() {
   const selectedDate = weekDates[dateIdx];
   const categoryFilter = tab === t.classTabs[0] ? undefined : tab.toLowerCase();
   const { data: classes, loading, error, refetch } = useClasses(selectedDate, categoryFilter);
+
+  // Stable color index keyed by staff name position
+  const staffColorIndex = useMemo<Record<string, number>>(() => {
+    const idx: Record<string, number> = {};
+    staffNames.forEach((name, i) => { idx[name] = i; });
+    return idx;
+  }, [staffNames]);
+
+  const filtered = useMemo(
+    () => activeInstructor ? classes.filter((c) => c.instructor === activeInstructor) : classes,
+    [classes, activeInstructor]
+  );
 
   useFocusEffect(useCallback(() => { refetch(); }, [refetch]));
 
@@ -146,6 +181,38 @@ export default function ClassesScreen() {
         </View>
       </View>
 
+      {/* Instructor filter bar — always visible once staff list loads */}
+      {staffNames.length > 0 && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.filterScroll}
+          contentContainerStyle={styles.filterContent}
+        >
+          <TouchableOpacity
+            style={[styles.filterPill, activeInstructor === null && styles.filterPillActive]}
+            onPress={() => setActiveInstructor(null)}
+          >
+            <Text style={[styles.filterText, activeInstructor === null && styles.filterTextActive]}>All</Text>
+          </TouchableOpacity>
+          {staffNames.map((name) => {
+            const active = activeInstructor === name;
+            const color = INSTRUCTOR_COLORS[staffColorIndex[name] % INSTRUCTOR_COLORS.length];
+            return (
+              <TouchableOpacity
+                key={name}
+                style={[styles.filterPill, active && { backgroundColor: color.bg, borderColor: color.bg }]}
+                onPress={() => setActiveInstructor(active ? null : name)}
+              >
+                <Text style={[styles.filterText, active && { color: color.fg, fontFamily: fonts.sansMd }]}>
+                  {name}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      )}
+
       <View style={styles.list}>
         <Text style={styles.sectionLabel}>{sectionLabel(selectedDate, today)}</Text>
 
@@ -161,7 +228,7 @@ export default function ClassesScreen() {
           </View>
         )}
 
-        {!loading && !error && classes.length === 0 && (
+        {!loading && !error && filtered.length === 0 && (
           <Card style={styles.empty}>
             <Icon name="calendar" size={28} color={colors.fgMuted} />
             <Text style={styles.emptyTitle}>No classes this day</Text>
@@ -169,7 +236,7 @@ export default function ClassesScreen() {
           </Card>
         )}
 
-        {!loading && !error && classes.map((c) => (
+        {!loading && !error && filtered.map((c) => (
           <ClassCard
             key={c.id}
             cls={c}
@@ -239,6 +306,16 @@ const styles = StyleSheet.create({
     backgroundColor: colors.gold,
     borderRadius: 2,
   },
+  filterScroll: { borderBottomWidth: 1, borderBottomColor: colors.border },
+  filterContent: { paddingHorizontal: spacing[6], paddingVertical: spacing[3], gap: spacing[2] },
+  filterPill: {
+    paddingHorizontal: 14, paddingVertical: 7,
+    borderRadius: radii.full, borderWidth: 1,
+    borderColor: colors.border, backgroundColor: colors.card,
+  },
+  filterPillActive: { backgroundColor: colors.fg, borderColor: colors.fg },
+  filterText: { fontSize: fontSize.sm, color: colors.fgMuted, fontFamily: fonts.sans },
+  filterTextActive: { color: '#fff', fontFamily: fonts.sansMd },
   list: { padding: spacing[6], paddingTop: spacing[4] },
   sectionLabel: {
     fontFamily: fonts.sansMd,

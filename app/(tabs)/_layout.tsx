@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/src/theme';
 import { useLocale } from '@/src/i18n';
+import { useAuth } from '@/src/lib/auth';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -19,7 +20,9 @@ function TabIcon({ name, focused }: { name: IoniconName; focused: boolean }) {
 
 export default function TabLayout() {
   const { t } = useLocale();
+  const { profile } = useAuth();
   const insets = useSafeAreaInsets();
+  const isStaff = profile?.role === 'owner' || profile?.role === 'instructor';
   const bottomInset = Platform.OS === 'android' ? insets.bottom : 0;
 
   return (
@@ -73,6 +76,16 @@ export default function TabLayout() {
           title: t.nav.profile,
           tabBarIcon: ({ focused }) => (
             <Ionicons name={focused ? 'person' : 'person-outline'} size={24} color={focused ? colors.primary : colors.fgMuted} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="manage"
+        options={{
+          href: isStaff ? undefined : null,
+          title: t.nav.manage,
+          tabBarIcon: ({ focused }) => (
+            <Ionicons name={focused ? 'list' : 'list-outline'} size={24} color={focused ? colors.primary : colors.fgMuted} />
           ),
         }}
       />

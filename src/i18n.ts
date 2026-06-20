@@ -1,7 +1,7 @@
 import { createContext, useContext } from 'react';
 
 export interface Translations {
-  nav: { home: string; classes: string; bookings: string; profile: string };
+  nav: { home: string; classes: string; bookings: string; profile: string; manage: string };
   tagline: string;
   welcome: string[];
   bookClass: string;
@@ -31,10 +31,22 @@ export interface Translations {
   noAccount: string;
   haveAccount: string;
   checkEmail: string;
+  manageTitle: string;
+  roster: string;
+  attended: string;
+  addClass: string;
+  noManagedClasses: string;
+  saveClass: string;
+  classTitleLabel: string;
+  categoryLabel: string;
+  dateTimeLabel: string;
+  durationLabel: string;
+  capacityLabel: string;
+  locationLabel: string;
 }
 
 export const translations: Translations = {
-  nav: { home: 'Home', classes: 'Classes', bookings: 'Bookings', profile: 'Profile' },
+  nav: { home: 'Home', classes: 'Classes', bookings: 'Bookings', profile: 'Profile', manage: 'Manage' },
   tagline: 'Move. Breathe. Be.',
   welcome: ['Welcome to your space', 'for balance and well-being.'],
   bookClass: 'Book a Class',
@@ -64,6 +76,18 @@ export const translations: Translations = {
   noAccount: "Don't have an account?",
   haveAccount: 'Already have an account?',
   checkEmail: 'Check your email to confirm your account',
+  manageTitle: 'Manage',
+  roster: 'Roster',
+  attended: 'Attended',
+  addClass: 'Add Class',
+  noManagedClasses: 'No upcoming classes',
+  saveClass: 'Save Class',
+  classTitleLabel: 'Class Title',
+  categoryLabel: 'Category',
+  dateTimeLabel: 'Date & Time',
+  durationLabel: 'Duration (minutes)',
+  capacityLabel: 'Max Capacity',
+  locationLabel: 'Location',
 };
 
 export interface LocaleContextValue {

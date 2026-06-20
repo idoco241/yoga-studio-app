@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
+import {
+  View, Text, ScrollView, TouchableOpacity, ActivityIndicator,
+  StyleSheet, NativeSyntheticEvent, NativeScrollEvent,
+} from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PillButton, Card, Icon } from '@/src/components';
 import { colors, spacing, fontSize, fonts, radii } from '@/src/theme';
 import { useLocale } from '@/src/i18n';
@@ -22,9 +26,7 @@ const DAY_LABELS = ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", 'שבת'];
 
 function formatTime(date: Date): string {
   return new Intl.DateTimeFormat('he-IL', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
+    hour: '2-digit', minute: '2-digit', hour12: false,
   }).format(date);
 }
 
@@ -37,8 +39,8 @@ function sectionLabel(date: Date, today: Date): string {
   const tomorrow = new Date(today);
   tomorrow.setDate(today.getDate() + 1);
   const isTomorrow = date.toDateString() === tomorrow.toDateString();
-  if (isToday) return 'Today';
-  if (isTomorrow) return 'Tomorrow';
+  if (isToday) return 'היום';
+  if (isTomorrow) return 'מחר';
   return date.toLocaleDateString('he-IL', { weekday: 'long', month: 'long', day: 'numeric' });
 }
 
@@ -86,6 +88,7 @@ function ClassCard({ cls, bookLabel, onPress }: { cls: ClassRow; bookLabel: stri
 export default function ClassesScreen() {
   const router = useRouter();
   const { t } = useLocale();
+  const insets = useSafeAreaInsets();
   const today = useMemo(() => new Date(), []);
   const [dateIdx, setDateIdx] = useState(0);
   const dateScrollRef = useRef<ScrollView>(null);
@@ -93,7 +96,11 @@ export default function ClassesScreen() {
   const [activeInstructor, setActiveInstructor] = useState<string | null>(null);
   const [staffNames, setStaffNames] = useState<string[]>([]);
 
-  // Fetch all staff names once — filter bar is always visible regardless of day/category
+  const scrollRef = useRef<ScrollView>(null);
+  const sectionOffsets = useRef<number[]>([]);
+  const isProgrammaticScroll = useRef(false);
+  const activeIdxRef = useRef(0);
+
   useEffect(() => {
     supabase
       .from('profiles')
@@ -104,7 +111,6 @@ export default function ClassesScreen() {
       });
   }, []);
 
-  // today → Saturday of the following week (8–14 days depending on current day)
   const daysToShow = (6 - today.getDay()) + 8;
   const weekDates = useMemo(() =>
     Array.from({ length: daysToShow }, (_, i) => {
@@ -113,11 +119,12 @@ export default function ClassesScreen() {
       return d;
     }), [today, daysToShow]);
 
-  const selectedDate = weekDates[dateIdx];
+  const endDate = weekDates[weekDates.length - 1];
   const categoryFilter = tab === t.classTabs[0] ? undefined : tab.toLowerCase();
-  const { data: classes, loading, error, refetch } = useClasses(selectedDate, categoryFilter);
+  const { data: classes, loading, error, refetch } = useClasses(today, endDate, categoryFilter);
 
-  // Stable color index keyed by staff name position
+  useFocusEffect(useCallback(() => { refetch(); }, [refetch]));
+
   const staffColorIndex = useMemo<Record<string, number>>(() => {
     const idx: Record<string, number> = {};
     staffNames.forEach((name, i) => { idx[name] = i; });
@@ -129,19 +136,55 @@ export default function ClassesScreen() {
     [classes, activeInstructor]
   );
 
-  useFocusEffect(useCallback(() => { refetch(); }, [refetch]));
+  // Group classes by day — every weekDate gets a section, even if empty
+  const grouped = useMemo(() => {
+    const byDay = new Map<string, ClassRow[]>();
+    filtered.forEach((c) => {
+      const key = c.scheduledAt.toDateString();
+      if (!byDay.has(key)) byDay.set(key, []);
+      byDay.get(key)!.push(c);
+    });
+    return weekDates.map((d) => ({
+      date: d,
+      key: d.toDateString(),
+      classes: byDay.get(d.toDateString()) ?? [],
+    }));
+  }, [filtered, weekDates]);
+
+  // Tap a date pill → scroll the content to that day's section
+  function scrollToSection(idx: number) {
+    const y = sectionOffsets.current[idx];
+    if (y == null) return;
+    isProgrammaticScroll.current = true;
+    activeIdxRef.current = idx;
+    setDateIdx(idx);
+    scrollRef.current?.scrollTo({ y, animated: true });
+    setTimeout(() => { isProgrammaticScroll.current = false; }, 600);
+  }
+
+  // Main content scrolls → update active date indicator
+  function handleScroll(e: NativeSyntheticEvent<NativeScrollEvent>) {
+    if (isProgrammaticScroll.current) return;
+    const y = e.nativeEvent.contentOffset.y;
+    const offsets = sectionOffsets.current;
+    let active = 0;
+    for (let i = 0; i < offsets.length; i++) {
+      if (offsets[i] != null && offsets[i] <= y + 40) active = i;
+    }
+    if (active !== activeIdxRef.current) {
+      activeIdxRef.current = active;
+      setDateIdx(active);
+    }
+  }
 
   return (
-    <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-      <View style={styles.header}>
+    <View style={styles.container}>
+      {/* Fixed header — date strip + category tabs */}
+      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
         <View style={styles.titleRow}>
           <Text style={styles.title}>{t.classesTitle}</Text>
-          <TouchableOpacity style={styles.filterBtn}>
-            <Icon name="filter" size={22} color={colors.gold} />
-          </TouchableOpacity>
         </View>
 
-        {/* Date strip — scrollable, RTL so today is on the right */}
         <ScrollView
           ref={dateScrollRef}
           horizontal
@@ -152,14 +195,19 @@ export default function ClassesScreen() {
         >
           {weekDates.map((d, i) => {
             const active = i === dateIdx;
+            const isToday = i === 0;
             const dayLabel = DAY_LABELS[d.getDay()];
             return (
               <TouchableOpacity
                 key={i}
                 style={styles.datePill}
-                onPress={() => setDateIdx(i)}
+                onPress={() => scrollToSection(i)}
               >
-                <Text style={[styles.dateNum, active && styles.dateNumActive]}>{d.getDate()}</Text>
+                <View style={[styles.dateNumWrap, isToday && styles.dateNumWrapToday]}>
+                  <Text style={[styles.dateNum, active && styles.dateNumActive, isToday && styles.dateNumToday]}>
+                    {d.getDate()}
+                  </Text>
+                </View>
                 <Text style={[styles.dateLabel, active && styles.dateLabelActive]}>{dayLabel}</Text>
                 {active && <View style={styles.dateUnderline} />}
               </TouchableOpacity>
@@ -167,7 +215,6 @@ export default function ClassesScreen() {
           })}
         </ScrollView>
 
-        {/* Category tabs */}
         <View style={styles.tabs}>
           {t.classTabs.map((tabName) => {
             const active = tabName === tab;
@@ -181,41 +228,47 @@ export default function ClassesScreen() {
         </View>
       </View>
 
-      {/* Instructor filter bar — always visible once staff list loads */}
+      {/* Instructor filter — View wrapper hard-constrains height so ScrollView can't expand */}
       {staffNames.length > 0 && (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.filterScroll}
-          contentContainerStyle={styles.filterContent}
-        >
-          <TouchableOpacity
-            style={[styles.filterPill, activeInstructor === null && styles.filterPillActive]}
-            onPress={() => setActiveInstructor(null)}
+        <View style={styles.filterBar}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.filterContent}
           >
-            <Text style={[styles.filterText, activeInstructor === null && styles.filterTextActive]}>All</Text>
-          </TouchableOpacity>
-          {staffNames.map((name) => {
-            const active = activeInstructor === name;
-            const color = INSTRUCTOR_COLORS[staffColorIndex[name] % INSTRUCTOR_COLORS.length];
-            return (
-              <TouchableOpacity
-                key={name}
-                style={[styles.filterPill, active && { backgroundColor: color.bg, borderColor: color.bg }]}
-                onPress={() => setActiveInstructor(active ? null : name)}
-              >
-                <Text style={[styles.filterText, active && { color: color.fg, fontFamily: fonts.sansMd }]}>
-                  {name}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
+            <TouchableOpacity
+              style={[styles.filterPill, activeInstructor === null && styles.filterPillActive]}
+              onPress={() => setActiveInstructor(null)}
+            >
+              <Text style={[styles.filterText, activeInstructor === null && styles.filterTextActive]}>All</Text>
+            </TouchableOpacity>
+            {staffNames.map((name) => {
+              const active = activeInstructor === name;
+              const color = INSTRUCTOR_COLORS[staffColorIndex[name] % INSTRUCTOR_COLORS.length];
+              return (
+                <TouchableOpacity
+                  key={name}
+                  style={[styles.filterPill, active && { backgroundColor: color.bg, borderColor: color.bg }]}
+                  onPress={() => setActiveInstructor(active ? null : name)}
+                >
+                  <Text style={[styles.filterText, active && { color: color.fg, fontFamily: fonts.sansMd }]}>
+                    {name}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
       )}
 
-      <View style={styles.list}>
-        <Text style={styles.sectionLabel}>{sectionLabel(selectedDate, today)}</Text>
-
+      {/* Scrollable content — all days */}
+      <ScrollView
+        ref={scrollRef}
+        style={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+      >
         {loading && (
           <View style={styles.center}>
             <ActivityIndicator color={colors.primary} />
@@ -228,35 +281,55 @@ export default function ClassesScreen() {
           </View>
         )}
 
-        {!loading && !error && filtered.length === 0 && (
-          <Card style={styles.empty}>
-            <Icon name="calendar" size={28} color={colors.fgMuted} />
-            <Text style={styles.emptyTitle}>No classes this day</Text>
-            <Text style={styles.emptySub}>Try selecting another date</Text>
-          </Card>
-        )}
+        {!loading && !error && grouped.map((group, i) => (
+          <View
+            key={group.key}
+            onLayout={(e) => { sectionOffsets.current[i] = e.nativeEvent.layout.y; }}
+          >
+            {/* Day separator */}
+            <View style={styles.separator}>
+              <View style={styles.sepLine} />
+              <Text style={styles.sepLabel}>{sectionLabel(group.date, today)}</Text>
+              <View style={styles.sepLine} />
+            </View>
 
-        {!loading && !error && filtered.map((c) => (
-          <ClassCard
-            key={c.id}
-            cls={c}
-            bookLabel={t.book}
-            onPress={() => router.push(`/class/${c.id}` as any)}
-          />
+            {group.classes.length === 0 ? (
+              <View style={styles.emptyDay}>
+                <Text style={styles.emptyDayText}>No classes</Text>
+              </View>
+            ) : (
+              <View style={styles.dayClasses}>
+                {group.classes.map((c) => (
+                  <ClassCard
+                    key={c.id}
+                    cls={c}
+                    bookLabel={t.book}
+                    onPress={() => router.push(`/class/${c.id}` as any)}
+                  />
+                ))}
+              </View>
+            )}
+          </View>
         ))}
-      </View>
-    </ScrollView>
+
+        <View style={{ height: 48 }} />
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: { flex: 1, backgroundColor: colors.bg },
-  header: { paddingTop: 72, paddingHorizontal: spacing[6], paddingBottom: 0 },
+  container: { flex: 1, backgroundColor: colors.bg },
+  header: {
+    paddingHorizontal: spacing[6],
+    paddingBottom: 0,
+    backgroundColor: colors.bg,
+  },
   titleRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing[4],
+    marginBottom: spacing[2],
   },
   title: {
     fontFamily: fonts.serif,
@@ -264,39 +337,31 @@ const styles = StyleSheet.create({
     color: colors.fg,
     lineHeight: 36,
   },
-  filterBtn: { padding: 6 },
-  dateScroll: { marginBottom: spacing[3] },
+  dateScroll: { marginBottom: spacing[1] },
   dateScrollContent: { flexDirection: 'row-reverse' },
   datePill: {
     width: 44,
     alignItems: 'center',
-    paddingVertical: 6,
-    paddingBottom: 10,
+    paddingVertical: 4,
+    paddingBottom: 8,
     position: 'relative',
   },
-  dateNum: {
-    fontFamily: fonts.serif,
-    fontSize: 22,
-    color: colors.fgMuted,
-    lineHeight: 26,
-  },
+  dateNumWrap: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  dateNumWrapToday: { backgroundColor: colors.primary },
+  dateNum: { fontFamily: fonts.serif, fontSize: 22, color: colors.fgMuted, lineHeight: 26 },
   dateNumActive: { color: colors.fg, fontFamily: fonts.serifMd },
+  dateNumToday: { color: '#fff', fontFamily: fonts.serifMd },
   dateLabel: { fontFamily: fonts.sans, fontSize: 11, color: colors.fgMuted },
   dateLabelActive: { color: colors.fg, fontFamily: fonts.sansMd },
   dateUnderline: {
     position: 'absolute',
-    bottom: 0,
-    left: 8, right: 8,
+    bottom: 0, left: 8, right: 8,
     height: 2,
     backgroundColor: colors.gold,
     borderRadius: 2,
   },
-  tabs: {
-    flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  tab: { position: 'relative', paddingVertical: 10, paddingHorizontal: 14, marginBottom: -1 },
+  tabs: { flexDirection: 'row' },
+  tab: { position: 'relative', paddingVertical: 6, paddingHorizontal: 14 },
   tabText: { fontFamily: fonts.sans, fontSize: fontSize.sm, color: colors.fgMuted },
   tabTextActive: { color: colors.fg, fontFamily: fonts.sansMd },
   tabUnderline: {
@@ -306,8 +371,20 @@ const styles = StyleSheet.create({
     backgroundColor: colors.gold,
     borderRadius: 2,
   },
-  filterScroll: { borderBottomWidth: 1, borderBottomColor: colors.border },
-  filterContent: { paddingHorizontal: spacing[6], paddingVertical: spacing[3], gap: spacing[2] },
+  filterBar: {
+    height: 44,
+    flexShrink: 0,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    backgroundColor: colors.bg,
+  },
+  filterContent: {
+    height: 44,
+    paddingHorizontal: spacing[6],
+    gap: spacing[2],
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
   filterPill: {
     paddingHorizontal: 14, paddingVertical: 7,
     borderRadius: radii.full, borderWidth: 1,
@@ -316,13 +393,26 @@ const styles = StyleSheet.create({
   filterPillActive: { backgroundColor: colors.fg, borderColor: colors.fg },
   filterText: { fontSize: fontSize.sm, color: colors.fgMuted, fontFamily: fonts.sans },
   filterTextActive: { color: '#fff', fontFamily: fonts.sansMd },
-  list: { padding: spacing[6], paddingTop: spacing[4] },
-  sectionLabel: {
-    fontFamily: fonts.sansMd,
-    fontSize: 13,
-    color: colors.fg,
-    marginBottom: spacing[3],
+  scroll: { flex: 1 },
+  separator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing[6],
+    paddingTop: spacing[3],
+    paddingBottom: spacing[2],
+    gap: spacing[3],
   },
+  sepLine: { flex: 1, height: 1, backgroundColor: colors.border },
+  sepLabel: {
+    fontFamily: fonts.sansMd,
+    fontSize: 12,
+    color: colors.fgMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
+  emptyDay: { paddingHorizontal: spacing[6], paddingBottom: spacing[4] },
+  emptyDayText: { fontSize: fontSize.sm, color: colors.fgMuted, fontStyle: 'italic' },
+  dayClasses: { paddingHorizontal: spacing[6], paddingBottom: spacing[2] },
   classCard: {
     flexDirection: 'row',
     padding: spacing[3],
@@ -349,7 +439,4 @@ const styles = StyleSheet.create({
   capacity: { fontSize: 11, color: colors.fgMuted },
   center: { paddingVertical: spacing[8], alignItems: 'center' },
   errorText: { fontSize: fontSize.sm, color: colors.fgMuted, textAlign: 'center' },
-  empty: { padding: spacing[6], alignItems: 'center', gap: spacing[3] },
-  emptyTitle: { fontFamily: fonts.sansMd, fontSize: 15, color: colors.fg },
-  emptySub: { fontSize: fontSize.sm, color: colors.fgMuted },
 });

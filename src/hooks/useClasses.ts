@@ -15,8 +15,8 @@ export interface ClassRow {
   myBookingStatus: 'confirmed' | 'waitlist' | 'cancelled' | null;
 }
 
-export function useClasses(date: Date, category?: string) {
-  const dateKey = date.toDateString();
+export function useClasses(startDate: Date, endDate: Date, category?: string) {
+  const rangeKey = startDate.toDateString() + endDate.toDateString();
   const [data, setData] = useState<ClassRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -29,10 +29,10 @@ export function useClasses(date: Date, category?: string) {
     setLoading(true);
     setError(null);
 
-    const start = new Date(date);
-    start.setUTCHours(0, 0, 0, 0);
-    const end = new Date(date);
-    end.setUTCHours(23, 59, 59, 999);
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
 
     supabase
       .rpc('get_classes_for_date', {
@@ -67,7 +67,7 @@ export function useClasses(date: Date, category?: string) {
 
     return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dateKey, category, version]);
+  }, [rangeKey, category, version]);
 
   return { data, loading, error, refetch };
 }

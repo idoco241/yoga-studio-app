@@ -22,8 +22,10 @@ function getInstructorColor(name: string, nameIndex: Record<string, number>) {
 }
 
 function initials(name: string) {
+  if (!name.trim()) return '?';
   return name
-    .split(' ')
+    .trim()
+    .split(/\s+/)
     .map((w) => w[0])
     .join('')
     .toUpperCase()
@@ -144,8 +146,8 @@ export default function ManageScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Instructor filter bar */}
-      {instructorNames.length > 1 && (
+      {/* Instructor filter bar — always visible once data loads */}
+      {!loading && instructorNames.length > 0 && (
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -260,13 +262,14 @@ const styles = StyleSheet.create({
   card: { padding: spacing[4], marginBottom: spacing[3] },
   cardTop: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing[3] },
   avatarCircle: {
-    width: 38, height: 38,
+    width: 42, height: 42,
     borderRadius: radii.full,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
+    minWidth: 42,
   },
-  avatarText: { fontSize: 13, fontFamily: fonts.sansMd },
+  avatarText: { fontSize: 14, fontFamily: fonts.sansMd },
   cardBody: { flex: 1 },
   cardTitle: { fontFamily: fonts.sansMd, fontSize: 15, color: colors.fg, marginBottom: 4 },
   cardMeta: { fontSize: fontSize.sm, color: colors.fgMuted, lineHeight: 20 },

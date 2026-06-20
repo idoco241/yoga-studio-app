@@ -39,8 +39,8 @@ function sectionLabel(date: Date, today: Date): string {
   const tomorrow = new Date(today);
   tomorrow.setDate(today.getDate() + 1);
   const isTomorrow = date.toDateString() === tomorrow.toDateString();
-  if (isToday) return 'Today';
-  if (isTomorrow) return 'Tomorrow';
+  if (isToday) return 'היום';
+  if (isTomorrow) return 'מחר';
   return date.toLocaleDateString('he-IL', { weekday: 'long', month: 'long', day: 'numeric' });
 }
 

@@ -313,7 +313,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.full, borderWidth: 1,
     borderColor: colors.border, backgroundColor: colors.card,
   },
-  filterPillActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  filterPillActive: { backgroundColor: colors.fg, borderColor: colors.fg },
   filterText: { fontSize: fontSize.sm, color: colors.fgMuted, fontFamily: fonts.sans },
   filterTextActive: { color: '#fff', fontFamily: fonts.sansMd },
   list: { padding: spacing[6], paddingTop: spacing[4] },

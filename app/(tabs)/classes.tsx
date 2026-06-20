@@ -195,6 +195,7 @@ export default function ClassesScreen() {
         >
           {weekDates.map((d, i) => {
             const active = i === dateIdx;
+            const isToday = i === 0;
             const dayLabel = DAY_LABELS[d.getDay()];
             return (
               <TouchableOpacity
@@ -202,7 +203,11 @@ export default function ClassesScreen() {
                 style={styles.datePill}
                 onPress={() => scrollToSection(i)}
               >
-                <Text style={[styles.dateNum, active && styles.dateNumActive]}>{d.getDate()}</Text>
+                <View style={[styles.dateNumWrap, isToday && styles.dateNumWrapToday]}>
+                  <Text style={[styles.dateNum, active && styles.dateNumActive, isToday && styles.dateNumToday]}>
+                    {d.getDate()}
+                  </Text>
+                </View>
                 <Text style={[styles.dateLabel, active && styles.dateLabelActive]}>{dayLabel}</Text>
                 {active && <View style={styles.dateUnderline} />}
               </TouchableOpacity>
@@ -341,8 +346,11 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
     position: 'relative',
   },
+  dateNumWrap: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  dateNumWrapToday: { backgroundColor: colors.primary },
   dateNum: { fontFamily: fonts.serif, fontSize: 22, color: colors.fgMuted, lineHeight: 26 },
   dateNumActive: { color: colors.fg, fontFamily: fonts.serifMd },
+  dateNumToday: { color: '#fff', fontFamily: fonts.serifMd },
   dateLabel: { fontFamily: fonts.sans, fontSize: 11, color: colors.fgMuted },
   dateLabelActive: { color: colors.fg, fontFamily: fonts.sansMd },
   dateUnderline: {

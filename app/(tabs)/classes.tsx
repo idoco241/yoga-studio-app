@@ -5,6 +5,7 @@ import { PillButton, Card, Icon } from '@/src/components';
 import { colors, spacing, fontSize, fonts, radii } from '@/src/theme';
 import { useLocale } from '@/src/i18n';
 import { useClasses, type ClassRow } from '@/src/hooks/useClasses';
+import { supabase } from '@/src/lib/supabase';
 
 const PHOTO_COLORS = ['#D3C2A4', '#DDD0BE', '#DECFB4', '#E0D4BA'] as const;
 
@@ -90,6 +91,18 @@ export default function ClassesScreen() {
   const dateScrollRef = useRef<ScrollView>(null);
   const [tab, setTab] = useState(t.classTabs[0]);
   const [activeInstructor, setActiveInstructor] = useState<string | null>(null);
+  const [staffNames, setStaffNames] = useState<string[]>([]);
+
+  // Fetch all staff names once — filter bar is always visible regardless of day/category
+  useEffect(() => {
+    supabase
+      .from('profiles')
+      .select('display_name')
+      .in('role', ['owner', 'instructor'])
+      .then(({ data }) => {
+        if (data) setStaffNames(data.map((r: any) => r.display_name || 'Unnamed'));
+      });
+  }, []);
 
   // today → Saturday of the following week (8–14 days depending on current day)
   const daysToShow = (6 - today.getDay()) + 8;
@@ -104,20 +117,12 @@ export default function ClassesScreen() {
   const categoryFilter = tab === t.classTabs[0] ? undefined : tab.toLowerCase();
   const { data: classes, loading, error, refetch } = useClasses(selectedDate, categoryFilter);
 
-  // Reset instructor filter when date or category changes
-  useEffect(() => { setActiveInstructor(null); }, [dateIdx, tab]);
-
-  // Build stable instructor index from fetched data
-  const instructorIndex = useMemo<Record<string, number>>(() => {
+  // Stable color index keyed by staff name position
+  const staffColorIndex = useMemo<Record<string, number>>(() => {
     const idx: Record<string, number> = {};
-    let counter = 0;
-    classes.forEach((c) => {
-      if (!(c.instructor in idx)) { idx[c.instructor] = counter++; }
-    });
+    staffNames.forEach((name, i) => { idx[name] = i; });
     return idx;
-  }, [classes]);
-
-  const instructorNames = useMemo(() => Object.keys(instructorIndex), [instructorIndex]);
+  }, [staffNames]);
 
   const filtered = useMemo(
     () => activeInstructor ? classes.filter((c) => c.instructor === activeInstructor) : classes,
@@ -176,8 +181,8 @@ export default function ClassesScreen() {
         </View>
       </View>
 
-      {/* Instructor filter bar */}
-      {!loading && instructorNames.length > 0 && (
+      {/* Instructor filter bar — always visible once staff list loads */}
+      {staffNames.length > 0 && (
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -190,9 +195,9 @@ export default function ClassesScreen() {
           >
             <Text style={[styles.filterText, activeInstructor === null && styles.filterTextActive]}>All</Text>
           </TouchableOpacity>
-          {instructorNames.map((name) => {
+          {staffNames.map((name) => {
             const active = activeInstructor === name;
-            const color = INSTRUCTOR_COLORS[instructorIndex[name] % INSTRUCTOR_COLORS.length];
+            const color = INSTRUCTOR_COLORS[staffColorIndex[name] % INSTRUCTOR_COLORS.length];
             return (
               <TouchableOpacity
                 key={name}

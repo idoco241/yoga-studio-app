@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View, Text, ScrollView, TextInput, TouchableOpacity,
   ActivityIndicator, StyleSheet, Platform, Alert,
@@ -21,6 +21,11 @@ const CATEGORY_LABELS: Record<Category, string> = {
   specialty: 'Specialty',
 };
 
+interface StaffProfile {
+  id: string;
+  displayName: string;
+}
+
 export default function NewClassScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -41,12 +46,37 @@ export default function NewClassScreen() {
   const [location, setLocation] = useState('');
   const [saving, setSaving] = useState(false);
 
+  // Instructor picker state
+  const [staffList, setStaffList] = useState<StaffProfile[]>([]);
+  const [instructorId, setInstructorId] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase
+      .from('profiles')
+      .select('id, display_name')
+      .in('role', ['owner', 'instructor'])
+      .then(({ data }) => {
+        if (!data) return;
+        const list: StaffProfile[] = data.map((r: any) => ({
+          id: r.id,
+          displayName: r.display_name || 'Unnamed',
+        }));
+        setStaffList(list);
+        // Default to the logged-in user if they're in the list
+        if (profile && list.some((s) => s.id === profile.id)) {
+          setInstructorId(profile.id);
+        } else if (list.length > 0) {
+          setInstructorId(list[0].id);
+        }
+      });
+  }, [profile]);
+
   const topPad = insets.top + spacing[4];
   const bottomPad = (Platform.OS === 'android' ? insets.bottom : 0) + spacing[6];
 
   async function handleSave() {
     if (!title.trim()) { Alert.alert('Missing field', 'Please enter a class title.'); return; }
-    if (!profile) return;
+    if (!instructorId) { Alert.alert('Missing field', 'Please select an instructor.'); return; }
     setSaving(true);
 
     const { error } = await supabase.from('classes').insert({
@@ -56,7 +86,7 @@ export default function NewClassScreen() {
       duration_minutes: parseInt(duration, 10) || 60,
       max_capacity: parseInt(capacity, 10) || 20,
       location: location.trim() || null,
-      instructor_id: profile.id,
+      instructor_id: instructorId,
     });
 
     setSaving(false);
@@ -80,6 +110,29 @@ export default function NewClassScreen() {
       <View style={styles.body}>
         <Text style={styles.pageTitle}>New Class</Text>
 
+        {/* Instructor */}
+        <Text style={styles.label}>Instructor</Text>
+        {staffList.length === 0 ? (
+          <ActivityIndicator color={colors.primary} style={{ alignSelf: 'flex-start' }} />
+        ) : (
+          <View style={styles.pillRow}>
+            {staffList.map((s) => {
+              const active = instructorId === s.id;
+              return (
+                <TouchableOpacity
+                  key={s.id}
+                  style={[styles.pill, active && styles.pillActive]}
+                  onPress={() => setInstructorId(s.id)}
+                >
+                  <Text style={[styles.pillText, active && styles.pillTextActive]}>
+                    {s.displayName}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        )}
+
         {/* Title */}
         <Text style={styles.label}>{t.classTitleLabel}</Text>
         <TextInput
@@ -92,14 +145,14 @@ export default function NewClassScreen() {
 
         {/* Category */}
         <Text style={styles.label}>{t.categoryLabel}</Text>
-        <View style={styles.categoryRow}>
+        <View style={styles.pillRow}>
           {CATEGORIES.map((c) => (
             <TouchableOpacity
               key={c}
-              style={[styles.categoryPill, category === c && styles.categoryPillActive]}
+              style={[styles.pill, category === c && styles.pillActive]}
               onPress={() => setCategory(c)}
             >
-              <Text style={[styles.categoryPillText, category === c && styles.categoryPillTextActive]}>
+              <Text style={[styles.pillText, category === c && styles.pillTextActive]}>
                 {CATEGORY_LABELS[c]}
               </Text>
             </TouchableOpacity>
@@ -188,7 +241,7 @@ export default function NewClassScreen() {
           size="lg"
           fullWidth
           onPress={handleSave}
-          disabled={saving}
+          disabled={saving || !instructorId}
           style={{ marginTop: spacing[4] }}
         >
           {saving ? <ActivityIndicator color="#fff" size="small" /> : t.saveClass}
@@ -235,8 +288,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   inputText: { fontSize: fontSize.sm, color: colors.fg, fontFamily: fonts.sans },
-  categoryRow: { flexDirection: 'row', gap: spacing[2] },
-  categoryPill: {
+  pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] },
+  pill: {
     paddingHorizontal: spacing[3],
     paddingVertical: 8,
     borderRadius: radii.full,
@@ -244,7 +297,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     backgroundColor: colors.card,
   },
-  categoryPillActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-  categoryPillText: { fontSize: fontSize.sm, color: colors.fgMuted, fontFamily: fonts.sans },
-  categoryPillTextActive: { color: '#fff', fontFamily: fonts.sansMd },
+  pillActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  pillText: { fontSize: fontSize.sm, color: colors.fgMuted, fontFamily: fonts.sans },
+  pillTextActive: { color: '#fff', fontFamily: fonts.sansMd },
 });

@@ -39,6 +39,17 @@ function formatDateTime(date: Date): string {
   });
 }
 
+const _today = new Date();
+
+function sectionLabel(date: Date): string {
+  const isToday = date.toDateString() === _today.toDateString();
+  const tomorrow = new Date(_today);
+  tomorrow.setDate(_today.getDate() + 1);
+  if (isToday) return 'היום';
+  if (date.toDateString() === tomorrow.toDateString()) return 'מחר';
+  return date.toLocaleDateString('he-IL', { weekday: 'long', month: 'long', day: 'numeric' });
+}
+
 function InstructorBadge({ name, colorIdx }: { name: string; colorIdx: number }) {
   const color = INSTRUCTOR_COLORS[colorIdx % INSTRUCTOR_COLORS.length];
   return (
@@ -125,6 +136,16 @@ export default function ManageScreen() {
     [classes, activeInstructor]
   );
 
+  const grouped = useMemo(() => {
+    const byDay = new Map<string, ManagedClass[]>();
+    filtered.forEach((cls) => {
+      const key = cls.scheduledAt.toDateString();
+      if (!byDay.has(key)) byDay.set(key, []);
+      byDay.get(key)!.push(cls);
+    });
+    return Array.from(byDay.entries()).map(([key, items]) => ({ key, date: items[0].scheduledAt, items }));
+  }, [filtered]);
+
   async function handleCancel(cls: ManagedClass) {
     const confirmed = await new Promise<boolean>((resolve) =>
       Alert.alert(
@@ -207,15 +228,24 @@ export default function ManageScreen() {
           </Card>
         )}
 
-        {!loading && !error && filtered.map((cls) => (
-          <View key={cls.id} style={cancelling === cls.id && styles.cancelling}>
-            <ClassManageCard
-              cls={cls}
-              colorIdx={instructorIndex[cls.instructorName] ?? 0}
-              onRoster={() => router.push(`/roster/${cls.id}` as any)}
-              onEdit={() => router.push(`/class/edit/${cls.id}` as any)}
-              onCancel={() => handleCancel(cls)}
-            />
+        {!loading && !error && grouped.map((group) => (
+          <View key={group.key}>
+            <View style={styles.separator}>
+              <View style={styles.sepLine} />
+              <Text style={styles.sepLabel}>{sectionLabel(group.date)}</Text>
+              <View style={styles.sepLine} />
+            </View>
+            {group.items.map((cls) => (
+              <View key={cls.id} style={cancelling === cls.id && styles.cancelling}>
+                <ClassManageCard
+                  cls={cls}
+                  colorIdx={instructorIndex[cls.instructorName] ?? 0}
+                  onRoster={() => router.push(`/roster/${cls.id}` as any)}
+                  onEdit={() => router.push(`/class/edit/${cls.id}` as any)}
+                  onCancel={() => handleCancel(cls)}
+                />
+              </View>
+            ))}
           </View>
         ))}
       </View>
@@ -258,7 +288,22 @@ const styles = StyleSheet.create({
   filterText: { fontSize: fontSize.sm, color: colors.fgMuted, fontFamily: fonts.sans },
   filterTextActive: { color: '#fff', fontFamily: fonts.sansMd },
 
-  list: { padding: spacing[6] },
+  list: { padding: spacing[6], paddingTop: spacing[2] },
+  separator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingTop: spacing[3],
+    paddingBottom: spacing[2],
+    gap: spacing[3],
+  },
+  sepLine: { flex: 1, height: 1, backgroundColor: colors.border },
+  sepLabel: {
+    fontFamily: fonts.sansMd,
+    fontSize: 12,
+    color: colors.fgMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
   center: { paddingVertical: spacing[8], alignItems: 'center' },
   errorText: { fontSize: fontSize.sm, color: colors.fgMuted },
   empty: { padding: spacing[8], alignItems: 'center', gap: spacing[3] },

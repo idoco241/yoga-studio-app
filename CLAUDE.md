@@ -67,7 +67,7 @@ Clients book into classes; capacity limits; waitlist; attendance marking by inst
 
 ## Supabase Schema
 
-All 4 tables are live on the remote project (`bohzzvltnzciqlfwmaiq`). Applied via migrations:
+All 4 tables are live on the remote project (`upesszjbmbhaflwanygq`). Applied via migrations:
 
 | Migration | What it does |
 |---|---|

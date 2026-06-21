@@ -26,8 +26,9 @@
       "favicon": "./assets/images/favicon.png"
     },
     "extra": {
+      "router": {},
       "eas": {
-        "projectId": "rsyoga-placeholder"
+        "projectId": "f4e3771b-f2ef-495f-820a-d769d987ce04"
       }
     },
     "plugins": [
@@ -57,6 +58,7 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "owner": "idoco241"
   }
 }

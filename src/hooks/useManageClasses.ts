@@ -28,9 +28,10 @@ export function useManageClasses() {
     setError(null);
 
     const start = new Date();
+    start.setDate(start.getDate() - 7); // include last 7 days so ended classes show for payment review
     start.setHours(0, 0, 0, 0);
-    const end = new Date(start);
-    end.setDate(start.getDate() + 14);
+    const end = new Date();
+    end.setDate(end.getDate() + 14);
 
     supabase
       .rpc('get_managed_classes', {

@@ -43,6 +43,14 @@ export interface Translations {
   durationLabel: string;
   capacityLabel: string;
   locationLabel: string;
+  paymentReviewTitle: string;
+  markCash: string;
+  markWaived: string;
+  requestPayment: string;
+  paymentDone: string;
+  payInstructor: string;
+  payTitle: string;
+  paySuccess: string;
 }
 
 export const translations: Translations = {
@@ -88,6 +96,14 @@ export const translations: Translations = {
   durationLabel: 'Duration (minutes)',
   capacityLabel: 'Max Capacity',
   locationLabel: 'Location',
+  paymentReviewTitle: 'Payment Review',
+  markCash: 'Cash',
+  markWaived: 'Waived',
+  requestPayment: 'Request',
+  paymentDone: 'Done',
+  payInstructor: 'Your instructor will collect payment directly',
+  payTitle: 'Payment',
+  paySuccess: 'Payment received — thank you!',
 };
 
 export interface LocaleContextValue {

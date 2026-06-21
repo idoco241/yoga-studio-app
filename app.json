@@ -58,8 +58,7 @@
       "expo-font"
     ],
     "experiments": {
-      "typedRoutes": true,
-      "reactCompiler": true
+      "typedRoutes": true
     },
     "owner": "idoco241"
   }

@@ -6,6 +6,9 @@
     "preview": {
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "EXPO_UNSTABLE_METRO_OPTIMIZE_FOR_HERMES": "0"
       }
     },
     "production": {

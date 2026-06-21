@@ -59,19 +59,27 @@ function InstructorBadge({ name, colorIdx }: { name: string; colorIdx: number })
   );
 }
 
+function isPastClass(cls: ManagedClass): boolean {
+  const endTime = cls.scheduledAt.getTime() + cls.durationMinutes * 60_000;
+  return endTime <= Date.now();
+}
+
 function ClassManageCard({
   cls,
   colorIdx,
   onRoster,
   onEdit,
   onCancel,
+  onPaymentReview,
 }: {
   cls: ManagedClass;
   colorIdx: number;
   onRoster: () => void;
   onEdit: () => void;
   onCancel: () => void;
+  onPaymentReview: () => void;
 }) {
+  const past = isPastClass(cls);
   return (
     <Card style={styles.card}>
       <View style={styles.cardTop}>
@@ -92,20 +100,31 @@ function ClassManageCard({
               <Text style={styles.countText}>{cls.waitlistCount}</Text>
             </View>
           )}
-          <View style={styles.iconRow}>
-            <TouchableOpacity onPress={onEdit} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <Icon name="pencil" size={15} color={colors.fgMuted} />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={onCancel} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <Icon name="trash" size={15} color={colors.destructive} />
-            </TouchableOpacity>
-          </View>
+          {!past && (
+            <View style={styles.iconRow}>
+              <TouchableOpacity onPress={onEdit} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Icon name="pencil" size={15} color={colors.fgMuted} />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={onCancel} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Icon name="trash" size={15} color={colors.destructive} />
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       </View>
-      <TouchableOpacity style={styles.rosterBtn} onPress={onRoster}>
-        <Text style={styles.rosterBtnText}>Roster</Text>
-        <Icon name="chevron-right" size={14} color={colors.primary} />
-      </TouchableOpacity>
+
+      <View style={styles.cardActions}>
+        <TouchableOpacity style={styles.rosterBtn} onPress={onRoster}>
+          <Text style={styles.rosterBtnText}>Roster</Text>
+          <Icon name="chevron-right" size={14} color={colors.primary} />
+        </TouchableOpacity>
+        {past && (
+          <TouchableOpacity style={styles.paymentBtn} onPress={onPaymentReview}>
+            <Icon name="cash" size={14} color="#fff" />
+            <Text style={styles.paymentBtnText}>Payment</Text>
+          </TouchableOpacity>
+        )}
+      </View>
     </Card>
   );
 }
@@ -243,6 +262,7 @@ export default function ManageScreen() {
                   onRoster={() => router.push(`/roster/${cls.id}` as any)}
                   onEdit={() => router.push(`/class/edit/${cls.id}` as any)}
                   onCancel={() => handleCancel(cls)}
+                  onPaymentReview={() => router.push(`/payment-review/${cls.id}` as any)}
                 />
               </View>
             ))}
@@ -331,15 +351,30 @@ const styles = StyleSheet.create({
   countText: { fontSize: 12, color: colors.fgMuted },
   iconRow: { flexDirection: 'row', gap: spacing[3], marginTop: 4 },
 
-  rosterBtn: {
+  cardActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-end',
-    gap: 4,
+    justifyContent: 'space-between',
     marginTop: spacing[3],
     paddingTop: spacing[3],
     borderTopWidth: 1,
     borderTopColor: colors.border,
+    gap: spacing[2],
+  },
+  rosterBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   rosterBtnText: { fontSize: fontSize.sm, fontFamily: fonts.sansMd, color: colors.primary },
+  paymentBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: colors.gold,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: radii.full,
+  },
+  paymentBtnText: { fontSize: 12, fontFamily: fonts.sansMd, color: '#fff' },
 });

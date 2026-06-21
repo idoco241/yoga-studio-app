@@ -1,6 +1,33 @@
 import { createContext, useContext, useEffect, useState } from 'react';
+import { Platform } from 'react-native';
 import { Session, AuthError } from '@supabase/supabase-js';
+import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
 import { supabase } from './supabase';
+
+// Request push permission and store token in profiles.push_token.
+// Remote push only works in EAS builds (not Expo Go) — the token is saved
+// regardless so the code path is exercised during development.
+async function registerPushToken(userId: string) {
+  if (Platform.OS === 'web') return;
+  try {
+    const { status: existing } = await Notifications.getPermissionsAsync();
+    const { status } = existing === 'granted'
+      ? { status: existing }
+      : await Notifications.requestPermissionsAsync();
+    if (status !== 'granted') return;
+
+    const projectId = Constants.expoConfig?.extra?.eas?.projectId;
+    const { data: tokenData } = await Notifications.getExpoPushTokenAsync(
+      projectId ? { projectId } : undefined
+    );
+    if (!tokenData) return;
+
+    await supabase.from('profiles').update({ push_token: tokenData }).eq('id', userId);
+  } catch {
+    // Non-fatal — push notifications are best-effort
+  }
+}
 
 export type UserRole = 'owner' | 'instructor' | 'client';
 
@@ -47,14 +74,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      if (session) fetchProfile(session.user.id).then(setProfile);
+      if (session) {
+        fetchProfile(session.user.id).then(setProfile);
+        registerPushToken(session.user.id);
+      }
       setLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      if (session) fetchProfile(session.user.id).then(setProfile);
-      else setProfile(null);
+      if (session) {
+        fetchProfile(session.user.id).then(setProfile);
+        registerPushToken(session.user.id);
+      } else {
+        setProfile(null);
+      }
     });
 
     return () => subscription.unsubscribe();
